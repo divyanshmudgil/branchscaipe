@@ -1,0 +1,46 @@
+/* ===========================================================================
+   Branchscaipe — Effects: opacity, blur, borders, z-index
+   Glassmorphism is selective: subtle blur, high readability, never murky.
+   =========================================================================== */
+
+:root {
+  /* Opacity scale */
+  --opacity-0:    0; /* @kind other */
+  --opacity-muted:  0.55; /* @kind other */
+  --opacity-subtle: 0.72; /* @kind other */
+  --opacity-disabled: 0.40; /* @kind other */
+  --opacity-full: 1; /* @kind other */
+
+  /* Backdrop blur — for glass surfaces */
+  --blur-sm:  8px; /* @kind other */
+  --blur-md:  16px; /* @kind other */
+  --blur-lg:  28px; /* @kind other */
+  --blur-xl:  40px; /* @kind other */
+
+  /* Glass recipe (apply: background var(--surface-glass) + this) */
+  --glass-blur: saturate(1.5) blur(var(--blur-md)); /* @kind other */
+  --glass-border: 1px solid var(--border-subtle); /* @kind other */
+
+  /* Border widths */
+  --border-width-hair: 1px; /* @kind other */
+  --border-width-thick: 1.5px; /* @kind other */
+
+  /* Scrim for modals */
+  --scrim: rgba(20,20,32,0.40); /* @kind color */
+
+  /* Z-index ladder */
+  --z-base:     0; /* @kind other */
+  --z-sticky:   100; /* @kind other */
+  --z-rail:     200; /* @kind other */
+  --z-dropdown: 800; /* @kind other */
+  --z-overlay:  900; /* @kind other */
+  --z-modal:    1000; /* @kind other */
+  --z-toast:    1100; /* @kind other */
+  --z-tooltip:  1200; /* @kind other */
+}
+
+.dark,
+[data-theme="dark"] {
+  --scrim: rgba(0,0,0,0.55);
+  --glass-blur: saturate(1.3) blur(var(--blur-md));
+}

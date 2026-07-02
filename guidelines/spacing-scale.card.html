@@ -1,0 +1,27 @@
+<!-- @dsCard group="Spacing" viewport="700x160" name="Spacing scale" subtitle="4px base grid" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; background: var(--surface-1); }
+  .wrap { box-sizing: border-box; width: 700px; padding: 24px; display: flex; flex-direction: column; gap: 9px; }
+  .row { display: flex; align-items: center; gap: 14px; }
+  .lbl { font: var(--weight-medium) 11px/1 var(--font-sans); color: var(--text-muted); width: 78px; font-variant-numeric: tabular-nums; }
+  .bar { height: 14px; border-radius: 4px; background: var(--gradient-brand-soft); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="row"><span class="lbl">1 · 4px</span><div class="bar" style="width:4px"></div></div>
+    <div class="row"><span class="lbl">2 · 8px</span><div class="bar" style="width:8px"></div></div>
+    <div class="row"><span class="lbl">3 · 12px</span><div class="bar" style="width:12px"></div></div>
+    <div class="row"><span class="lbl">4 · 16px</span><div class="bar" style="width:16px"></div></div>
+    <div class="row"><span class="lbl">6 · 24px</span><div class="bar" style="width:24px"></div></div>
+    <div class="row"><span class="lbl">7 · 32px</span><div class="bar" style="width:32px"></div></div>
+    <div class="row"><span class="lbl">9 · 48px</span><div class="bar" style="width:48px"></div></div>
+    <div class="row"><span class="lbl">10 · 64px</span><div class="bar" style="width:64px"></div></div>
+  </div>
+</body>
+</html>

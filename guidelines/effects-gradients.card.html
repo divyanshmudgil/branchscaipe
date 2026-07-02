@@ -1,0 +1,24 @@
+<!-- @dsCard group="Effects" viewport="700x200" name="Gradients & Glass" subtitle="Aurora field, dawn, brand, and a glass panel" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; background: var(--surface-1); }
+  .wrap { box-sizing: border-box; width: 700px; padding: 22px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+  .tile { height: 116px; border-radius: var(--radius-lg); position: relative; overflow: hidden; box-shadow: var(--shadow-sm); display: flex; align-items: flex-end; padding: 12px; }
+  .lbl { position: relative; z-index: 2; font: var(--weight-semibold) 12px/1 var(--font-sans); color: var(--c-ink-800); }
+  .glass { background: var(--gradient-aurora); }
+  .glasspanel { position: absolute; inset: 16px; border-radius: var(--radius-md); background: var(--surface-glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border: 1px solid var(--border-subtle); z-index: 1; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="tile" style="background:var(--gradient-aurora)"><span class="lbl">aurora</span></div>
+    <div class="tile" style="background:var(--gradient-dawn)"><span class="lbl">dawn</span></div>
+    <div class="tile" style="background:var(--gradient-brand)"><span class="lbl" style="color:#fff">brand</span></div>
+    <div class="tile glass"><div class="glasspanel"></div><span class="lbl">glass</span></div>
+  </div>
+</body>
+</html>

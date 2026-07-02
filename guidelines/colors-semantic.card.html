@@ -1,0 +1,23 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Semantic" subtitle="Success · Warning · Error · Info (muted, never neon)" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; background: var(--surface-1); }
+  .wrap { box-sizing: border-box; width: 700px; padding: 24px; display: flex; gap: 14px; }
+  .cell { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .solid { height: 48px; border-radius: var(--radius-sm); display: flex; align-items: center; padding: 0 14px; font: var(--weight-semibold) 13px/1 var(--font-sans); color: #fff; }
+  .soft { height: 34px; border-radius: var(--radius-sm); display: flex; align-items: center; padding: 0 14px; font: var(--weight-medium) 12px/1 var(--font-sans); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="cell"><div class="solid" style="background:var(--color-success)">Success</div><div class="soft" style="background:var(--color-success-bg);color:var(--color-success)">Merged</div></div>
+    <div class="cell"><div class="solid" style="background:var(--color-warning)">Warning</div><div class="soft" style="background:var(--color-warning-bg);color:var(--color-warning)">Unsaved branch</div></div>
+    <div class="cell"><div class="solid" style="background:var(--color-error)">Error</div><div class="soft" style="background:var(--color-error-bg);color:var(--color-error)">Merge conflict</div></div>
+    <div class="cell"><div class="solid" style="background:var(--color-info)">Info</div><div class="soft" style="background:var(--color-info-bg);color:var(--color-info)">Branch active</div></div>
+  </div>
+</body>
+</html>

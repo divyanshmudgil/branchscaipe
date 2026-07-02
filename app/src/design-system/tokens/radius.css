@@ -1,0 +1,16 @@
+/* ===========================================================================
+   Branchscaipe — Radius
+   "Soft, rounded throughout. No harsh geometry."
+   Brief scale: 12 / 16 / 20 / 24 / 32, plus small + pill.
+   =========================================================================== */
+
+:root {
+  --radius-xs:   8px;
+  --radius-sm:   12px;
+  --radius-md:   16px;
+  --radius-lg:   20px;
+  --radius-xl:   24px;
+  --radius-2xl:  32px;
+  --radius-pill: 999px;
+  --radius-full: 50%;
+}

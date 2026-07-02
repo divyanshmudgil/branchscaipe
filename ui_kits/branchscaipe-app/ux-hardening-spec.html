@@ -1,0 +1,194 @@
+<!-- @dsCard group="Branchscaipe App" viewport="900x1200" name="UX hardening spec" subtitle="Audit, IA, interaction & merge models, state diagrams, edge cases, plan" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Branchscaipe — UX Hardening Specification</title>
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  html, body { margin: 0; background: var(--bg); }
+  .doc { max-width: 880px; margin: 0 auto; padding: 72px 40px 120px; font-family: var(--font-sans); color: var(--text-primary); }
+  .doc h1 { font-size: var(--fs-h1); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); margin: 0 0 8px; }
+  .doc .lede { font-size: var(--fs-body-lg); color: var(--text-muted); line-height: var(--lh-relaxed); margin: 0 0 8px; max-width: 62ch; }
+  .doc h2 { font-size: var(--fs-h3); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-tight); margin: 56px 0 6px; padding-top: 22px; border-top: 1px solid var(--border-subtle); }
+  .doc h2 .num { color: var(--brand-primary); font-variant-numeric: tabular-nums; margin-right: 12px; }
+  .doc h3 { font-size: var(--fs-body-lg); font-weight: var(--weight-semibold); margin: 28px 0 8px; }
+  .doc p { font-size: var(--fs-body); line-height: var(--lh-relaxed); color: var(--text-secondary); margin: 0 0 12px; max-width: 68ch; }
+  .doc ul { margin: 0 0 12px; padding-left: 0; list-style: none; }
+  .doc li { font-size: var(--fs-body); line-height: var(--lh-relaxed); color: var(--text-secondary); padding: 3px 0 3px 22px; position: relative; max-width: 68ch; }
+  .doc li::before { content: ""; position: absolute; left: 4px; top: 14px; width: 5px; height: 5px; border-radius: 50%; background: var(--brand-primary); }
+  .doc b { color: var(--text-primary); font-weight: var(--weight-semibold); }
+  .doc code { font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.86em; background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1px 6px; color: var(--text-primary); }
+  .eyebrow { font-size: var(--fs-micro); font-weight: var(--weight-bold); letter-spacing: .14em; text-transform: uppercase; color: var(--brand-primary); margin-bottom: 14px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0 4px; }
+  .card { background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 16px 18px; }
+  .card .k { font-size: var(--fs-micro); font-weight: var(--weight-bold); text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); margin-bottom: 6px; }
+  .bad { color: var(--color-error); font-weight: var(--weight-semibold); }
+  .good { color: var(--color-success); font-weight: var(--weight-semibold); }
+  .flow { background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 18px 20px; margin: 14px 0; font-family: var(--font-mono, monospace); font-size: var(--fs-body-sm); line-height: 1.85; color: var(--text-secondary); white-space: pre-wrap; overflow-x: auto; }
+  .flow .s { color: var(--brand-primary); font-weight: 700; }
+  .flow .e { color: var(--text-muted); }
+  .pill { display: inline-block; font-size: var(--fs-micro); font-weight: 700; padding: 2px 9px; border-radius: var(--radius-pill); margin-right: 6px; }
+  .pill.fixed { background: var(--color-success-bg); color: var(--color-success); }
+  .pill.new { background: var(--brand-primary-soft); color: var(--text-brand); }
+  table.spec { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: var(--fs-body-sm); }
+  table.spec th { text-align: left; font-weight: var(--weight-semibold); color: var(--text-muted); font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: .06em; padding: 8px 12px; border-bottom: 1px solid var(--border-default); }
+  table.spec td { padding: 10px 12px; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); vertical-align: top; line-height: 1.5; }
+  table.spec td:first-child { color: var(--text-primary); font-weight: var(--weight-semibold); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="doc">
+  <div class="eyebrow">Branchscaipe · Phase 2</div>
+  <h1>UX Hardening Specification</h1>
+  <p class="lede">An audit of the Phase-1 prototype and a redesigned interaction model so every feature behaves consistently and predictably. The visual language is preserved; this is product behavior, information architecture, and state.</p>
+  <p style="font-size:var(--fs-caption);color:var(--text-muted)">Scope: sidebar &amp; panels, branching, merge, navigation, response actions, sharing, context inheritance. The companion <b>Chat app</b> card implements everything below.</p>
+
+  <h2><span class="num">01</span>Audit — issues discovered</h2>
+  <p>The Phase-1 build had a strong visual foundation but conflated several distinct concepts and faked others. The defects, grouped by severity:</p>
+  <h3>Architecture-level (conflated concepts)</h3>
+  <ul>
+    <li><b>Sidebar and branch panel were the same surface.</b> The sidebar never expanded; its toggle opened the branch menu. Two unrelated ideas — navigation chrome and branch hierarchy — were bound to one control.</li>
+    <li><b>Branch creation produced a separate "BRANCHSCAPE" landing</b> instead of a thread. Branching felt like leaving the conversation, not continuing it — defeating the product's core promise.</li>
+  </ul>
+  <h3>Faked behavior (UI without function)</h3>
+  <ul>
+    <li><b>Merge</b> showed a toast and an indicator but never inserted content. <b>Copy</b> and <b>Retry</b> did nothing. <b>Share</b> said "Link Copied" with no link.</li>
+    <li><b>Breadcrumb</b> was decorative, not navigable. <b>Branches couldn't be renamed.</b></li>
+  </ul>
+  <h3>Quality (felt unpredictable)</h3>
+  <ul>
+    <li><b>AI replies felt random</b> because nothing carried parent / branch / merged context, so answers didn't connect to the thread they lived in.</li>
+    <li>No way to <b>star</b> a response, <b>branch from a selection</b>, or <b>right-click</b> a message — table-stakes affordances for an exploration tool were missing.</li>
+  </ul>
+
+  <h2><span class="num">02</span>Updated information architecture</h2>
+  <p>Three independent surfaces, each with one job. Crucially, the <b>navigation sidebar</b> and the <b>branch panel</b> are now separate — collapsing the sidebar never hides your branches, and opening branches never resizes the sidebar.</p>
+  <div class="grid2">
+    <div class="card"><div class="k">Surface A — Sidebar</div><p style="margin:0">Persistent nav. Collapsed = icon rail (68px); expanded = labelled (264px). Its toggle <b>only</b> expands/collapses. Holds: New chat, Search, Branches, Starred, History, Settings, account.</p></div>
+    <div class="card"><div class="k">Surface B — Panel</div><p style="margin:0">Secondary column raised by Branches / Starred / History. Never modal — the chat stays live beside it. Shows the lineage tree, starred responses, or full history.</p></div>
+    <div class="card"><div class="k">Surface C — Thread</div><p style="margin:0">The conversation itself: breadcrumb (primary nav) + transcript + composer. A branch is rendered here identically to any chat.</p></div>
+    <div class="card"><div class="k">Transients</div><p style="margin:0">Search, Settings, Merge → centered dialogs. Context menu &amp; selection menu → floating, dismiss on outside-click / Esc / scroll.</p></div>
+  </div>
+  <p>Navigation rule: a <b>branch is a first-class conversation</b>, never an overlay. Switching to a branch === switching chats. There is no modal "branch mode."</p>
+
+  <h2><span class="num">03</span>Branching interaction model</h2>
+  <p>Every entry point ends in the same place: a new child thread opens immediately, inherits context up to the branch point, and the user lands in it. No landing screen, no intermediate page. The branch appears in the hierarchy instantly and is named by AI (one word, max three) — overridable.</p>
+  <table class="spec">
+    <tr><th>Trigger</th><th>Branch point</th><th>Seed for auto-name</th></tr>
+    <tr><td>Response · Branch</td><td>That response</td><td>Response topic</td></tr>
+    <tr><td>Highlight → Branch from selection</td><td>That response</td><td>Selected text (quoted in the new thread)</td></tr>
+    <tr><td>Right-click → Branch from here</td><td>Right-clicked response</td><td>Response topic</td></tr>
+    <tr><td>Branch tree → New branch here</td><td>Parent's latest response</td><td>Parent name</td></tr>
+  </table>
+  <div class="flow"><span class="s">createBranch(point, seed?)</span>
+  ├─ new branch { parentId, branchPointId, quote?, name = autoName(seed) }
+  ├─ insert into tree  <span class="e">→ appears in panel instantly</span>
+  ├─ setActive(newId)  <span class="e">→ thread swaps, breadcrumb grows by one node</span>
+  └─ render: origin banner ("Branched from <Parent>") + empty composer
+     <span class="e">parent thread is never mutated</span></div>
+
+  <h2><span class="num">04</span>Context inheritance &amp; AI quality</h2>
+  <p>A branch inherits the transcript of every ancestor <b>up to the point it forked</b>, then its own messages. The model "sees" a flat, ordered context window assembled from the lineage:</p>
+  <div class="flow"><span class="s">contextMessages(branch)</span>
+  for each ancestor A in lineage(root → branch):
+    if A has a child C on the path:
+      include A.messages up to &amp; including C.branchPointId
+    else (A is the branch itself):
+      include all of A.messages
+  → ordered transcript = what the assistant conditions on</div>
+  <p>Replies are generated against that window, so a branch about <i>Closure</i> nested under <i>Hooks</i> answers with hooks context in scope. First replies in a branch open with a calm continuity cue ("Continuing from Hooks → State —") so the thread never feels disconnected. Merged content sets a <code>_lastMerge</code> marker the next reply acknowledges.</p>
+  <h3>Conflict resolution</h3>
+  <ul>
+    <li><b>Append-only, never overwrite.</b> Merged content is added after a divider; existing messages are untouched, so there is no destructive conflict to resolve.</li>
+    <li><b>Provenance preserved.</b> Merged messages carry <code>fromMerge: sourceId</code> and render with a left accent rule, so it's always clear what came from where.</li>
+    <li><b>Lineage is a DAG, kept acyclic.</b> A branch can't merge into itself or a descendant; merge targets exclude the source and its subtree, with ancestors ranked first.</li>
+  </ul>
+
+  <h2><span class="num">05</span>Merge interaction model</h2>
+  <p>Merge genuinely inserts content into a user-chosen target, with a labelled divider and metadata. The source branch is <b>always retained</b> — never auto-deleted.</p>
+  <div class="grid2">
+    <div class="card"><div class="k">Merge response</div><p style="margin:0">One response → chosen parent/ancestor. Inserts: divider + that single message (flagged <code>fromMerge</code>).</p></div>
+    <div class="card"><div class="k">Merge conversation</div><p style="margin:0">Current branch → chosen target. Inserts: divider + all of the branch's user/assistant messages.</p></div>
+  </div>
+  <div class="flow"><span class="s">doMerge({ scope, sourceId, target, sourceMsg? })</span>
+  divider = { role:"merge", source, sourceId, scope, ts }
+  inserts = scope==="response" ? [sourceMsg] : source.userAndAssistantMessages
+  target.messages.push(divider, ...inserts.map(flag fromMerge))
+  setActive(target); flash(divider)
+  toast: "Merged into <Target> · source kept"
+  <span class="e">→ divider reads: "Merged conversation from <Source> · 2 min ago", click to jump back</span></div>
+
+  <h2><span class="num">06</span>Navigation model</h2>
+  <p>The breadcrumb is the primary navigator and always emphasizes the current node.</p>
+  <div class="flow"><span class="e">short lineage</span>   React › Hooks › Closure › <span class="s">Example</span>
+<span class="e">long lineage</span>    React › <span class="e">…</span> › Closure › <span class="s">Example</span>   <span class="e">(… expands the full path)</span></div>
+  <ul>
+    <li><b>Click any node</b> → navigate immediately (same as switching chats). Current node is a non-link, emphasized pill.</li>
+    <li><b>Double-click a node</b> (or rename via context menu / tree) → inline edit. Same rename works from the branch panel.</li>
+    <li><b>Ellipsis</b> appears past 4 nodes; clicking expands to the full lineage with a calm transition.</li>
+    <li>Cross-surface jumps (Search result, Starred item, merge divider) navigate <i>and</i> flash the target message so you don't lose it.</li>
+  </ul>
+
+  <h2><span class="num">07</span>State diagrams</h2>
+  <h3>App navigation</h3>
+  <div class="flow">         <span class="s">[Empty/New chat]</span> ──send──▶ <span class="s">[Thread]</span> ◀──navigate(id)──▶ <span class="s">[Branch thread]</span>
+                                  │  ▲                         │
+                          openPanel│  │close                branch│   merge(target)
+                                  ▼  │                         ▼   ▼
+                          <span class="s">[Panel: Branches/Starred/History]</span      <span class="s">[Thread@target + divider]</span>
+  Sidebar.expanded ⟂ Panel.open ⟂ Thread   <span class="e">(three independent axes)</span></div>
+  <h3>Response action lifecycle</h3>
+  <div class="flow">  idle ──hover──▶ toolbar shown
+   ├─ copy   → clipboard.writeText → ✓ "Copied" (1.4s)
+   ├─ retry  → status:thinking → regenerate same id → idle
+   ├─ star   → toggle starred ⇄ appears/leaves Starred panel
+   ├─ branch → createBranch(thisResponse)
+   └─ merge  → MergeDialog → doMerge → target thread</div>
+  <h3>Send → reply</h3>
+  <div class="flow">  composer ──send──▶ push(user) ─▶ status:thinking ─▶ generateReply(contextWindow) ─▶ push(assistant) ─▶ idle
+                       │
+                first message in a fresh chat → autoName(userText)</div>
+
+  <h2><span class="num">08</span>Edge cases handled</h2>
+  <ul>
+    <li><b>Empty branch:</b> shows a one-line reassurance ("full context up to here, parent untouched") instead of a blank pane.</li>
+    <li><b>Rename to empty / whitespace:</b> rejected, reverts to prior name. Esc cancels; Enter / blur commits.</li>
+    <li><b>Merge into self or descendant:</b> impossible — excluded from target list, ancestors ranked first, parent labelled.</li>
+    <li><b>Deep lineage:</b> breadcrumb collapses with an ellipsis; tree indents recursively and scrolls.</li>
+    <li><b>Selection branch with tiny / cross-element selection:</b> ignored under 2 chars or if it escapes the response body.</li>
+    <li><b>Retry:</b> regenerates in place (same message id) using the preceding user turn — no duplicate bubble.</li>
+    <li><b>Unstar from panel:</b> reflects in the response immediately; empty Starred shows guidance, not a void.</li>
+    <li><b>Reload:</b> branches, active thread, theme, density and sidebar state persist; position is restored.</li>
+    <li><b>Share when nothing to share:</b> the link reflects the real scope (branch vs conversation); no fake "copied" without output.</li>
+    <li><b>Reduced motion:</b> jump-flash and entrance animations respect <code>prefers-reduced-motion</code>.</li>
+  </ul>
+
+  <h2><span class="num">09</span>Component updates required</h2>
+  <table class="spec">
+    <tr><th>Component</th><th>Change</th></tr>
+    <tr><td>Sidebar <span class="pill new">new</span></td><td>Replaces the old Rail. Expand/collapse independent of panels; labelled items with badges; tooltips when collapsed.</td></tr>
+    <tr><td>Panel <span class="pill new">new</span></td><td>Branches tree (rename + active emphasis + right-click), Starred list, History list. Non-modal column.</td></tr>
+    <tr><td>Breadcrumb <span class="pill fixed">fixed</span></td><td>Now interactive: click-to-navigate, double-click rename, ellipsis collapse/expand, current-node emphasis.</td></tr>
+    <tr><td>Response <span class="pill fixed">fixed</span></td><td>Working toolbar (copy/branch/retry/star/merge), star state, right-click menu, text-selection → branch.</td></tr>
+    <tr><td>TopBar <span class="pill fixed">fixed</span></td><td>Breadcrumb host; real Share popover (scope picker + copyable link); merge-to-parent.</td></tr>
+    <tr><td>MergeDivider <span class="pill new">new</span></td><td>Integrated, non-intrusive divider: "Merged … from <Source> · <time>", click to jump.</td></tr>
+    <tr><td>ContextMenu / SelectionMenu <span class="pill new">new</span></td><td>Floating menus for right-click and highlight-to-branch.</td></tr>
+    <tr><td>data.js <span class="pill fixed">fixed</span></td><td>Tree model + <code>contextMessages</code>, <code>autoName</code>, context-aware <code>generateReply</code>, relative time.</td></tr>
+  </table>
+
+  <h2><span class="num">10</span>Implementation plan</h2>
+  <ul>
+    <li><b>1 · Model</b> — tree data + lineage/context/auto-name/reply helpers. <span class="good">done</span></li>
+    <li><b>2 · Shell</b> — split Sidebar (expand/collapse) from Panel (branches/starred/history). <span class="good">done</span></li>
+    <li><b>3 · Thread</b> — Response toolbar wired to real handlers; merge dividers &amp; origin banners render. <span class="good">done</span></li>
+    <li><b>4 · Navigation</b> — interactive breadcrumb + inline rename + cross-surface jump-and-flash. <span class="good">done</span></li>
+    <li><b>5 · Merge</b> — target-picker dialog inserting content + metadata, source retained. <span class="good">done</span></li>
+    <li><b>6 · Affordances</b> — right-click menu, highlight-to-branch, share popover. <span class="good">done</span></li>
+    <li><b>7 · Polish</b> — Apple-calm motion (sidebar width, popovers, flash), reduced-motion, persistence. <span class="good">done</span></li>
+  </ul>
+  <p style="margin-top:24px;font-size:var(--fs-caption);color:var(--text-muted)">Motion language throughout: <code>--ease-calm</code> / <code>--ease-standard</code>, <code>--motion-fast/medium</code> durations, subtle translate-and-fade. No bounce, no spring, no flash.</p>
+</div>
+</body>
+</html>

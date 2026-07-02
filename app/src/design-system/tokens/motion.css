@@ -1,0 +1,37 @@
+/* ===========================================================================
+   Branchscaipe — Motion
+   "Alive but calm." Soft, slightly eased, never bouncy-loud.
+   =========================================================================== */
+
+:root {
+  /* Duration (ms; ease tokens are bezier curves) */
+  --motion-instant: 80ms; /* @kind other */
+  --motion-fast:    140ms; /* @kind other */
+  --motion-medium:  240ms; /* @kind other */
+  --motion-slow:    420ms; /* @kind other */
+  --motion-aurora:  18s; /* @kind other */
+
+  /* Easing */
+  --ease-standard: cubic-bezier(0.4, 0.0, 0.2, 1); /* @kind other */
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1); /* @kind other */
+  --ease-in:       cubic-bezier(0.4, 0.0, 1, 1); /* @kind other */
+  --ease-calm:     cubic-bezier(0.33, 0, 0.1, 1); /* @kind other */
+  --ease-spring:   cubic-bezier(0.34, 1.42, 0.64, 1); /* @kind other */
+
+  /* Composite transitions */
+  --transition-colors: color var(--motion-fast) var(--ease-standard),
+                       background-color var(--motion-fast) var(--ease-standard),
+                       border-color var(--motion-fast) var(--ease-standard); /* @kind other */
+  --transition-transform: transform var(--motion-medium) var(--ease-calm); /* @kind other */
+  --transition-base: all var(--motion-fast) var(--ease-standard); /* @kind other */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-instant: 0ms; /* @kind other */
+    --motion-fast: 0ms; /* @kind other */
+    --motion-medium: 0ms; /* @kind other */
+    --motion-slow: 0ms; /* @kind other */
+    --motion-aurora: 0ms; /* @kind other */
+  }
+}

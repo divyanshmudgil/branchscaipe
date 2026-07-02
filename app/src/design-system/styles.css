@@ -1,0 +1,16 @@
+/* ===========================================================================
+   Branchscaipe Design System — Global entry point
+   Consumers link THIS file. It is an @import manifest only — no rules here.
+   Order matters: fonts + primitives first, then anything that aliases them.
+   =========================================================================== */
+
+@import "./tokens/fonts.css";
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "./tokens/radius.css";
+@import "./tokens/shadows.css";
+@import "./tokens/effects.css";
+@import "./tokens/motion.css";
+@import "./tokens/gradients.css";
+@import "./tokens/base.css";

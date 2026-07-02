@@ -1,0 +1,25 @@
+<!-- @dsCard group="Effects" viewport="700x180" name="Elevation / Shadows" subtitle="Soft, layered, low-contrast — xs → xl + brand glow" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; background: var(--bg); }
+  .wrap { box-sizing: border-box; width: 700px; padding: 32px 24px; display: flex; gap: 18px; align-items: center; justify-content: space-between; }
+  .cell { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+  .box { width: 92px; height: 64px; border-radius: var(--radius-md); background: var(--surface-1); }
+  .lbl { font: var(--weight-medium) 11px/1 var(--font-sans); color: var(--text-muted); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="cell"><div class="box" style="box-shadow:var(--shadow-xs)"></div><span class="lbl">xs</span></div>
+    <div class="cell"><div class="box" style="box-shadow:var(--shadow-sm)"></div><span class="lbl">sm</span></div>
+    <div class="cell"><div class="box" style="box-shadow:var(--shadow-md)"></div><span class="lbl">md</span></div>
+    <div class="cell"><div class="box" style="box-shadow:var(--shadow-lg)"></div><span class="lbl">lg</span></div>
+    <div class="cell"><div class="box" style="box-shadow:var(--shadow-xl)"></div><span class="lbl">xl</span></div>
+    <div class="cell"><div class="box" style="box-shadow:var(--shadow-glow);background:var(--gradient-brand)"></div><span class="lbl">glow</span></div>
+  </div>
+</body>
+</html>

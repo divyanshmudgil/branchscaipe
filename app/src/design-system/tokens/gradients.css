@@ -1,0 +1,88 @@
+/* ===========================================================================
+   Branchscaipe — Gradient System
+   Signature aurora washes. Extremely soft, atmospheric, slow-moving.
+   Never distracting: low saturation, wide soft stops, used as backdrops
+   and accents — not as button fills (except the brand "intelligence" CTA).
+   =========================================================================== */
+
+:root {
+  /* --- Aurora field: the hero / ambient backdrop --- */
+  --gradient-aurora:
+    radial-gradient(120% 90% at 12% 8%,  rgba(183,180,247,0.55) 0%, rgba(183,180,247,0) 55%),
+    radial-gradient(110% 80% at 88% 4%,  rgba(171,218,243,0.50) 0%, rgba(171,218,243,0) 50%),
+    radial-gradient(120% 100% at 70% 100%, rgba(246,196,221,0.45) 0%, rgba(246,196,221,0) 55%),
+    radial-gradient(100% 90% at 20% 95%, rgba(182,236,213,0.40) 0%, rgba(182,236,213,0) 55%); /* @kind color */
+
+  /* --- Calm horizon: early-morning sky, top-to-bottom --- */
+  --gradient-dawn:
+    linear-gradient(180deg, #EFF1FE 0%, #F6F1FB 45%, #FBF4F4 100%); /* @kind color */
+
+  /* --- Brand "intelligence" gradient: for the signature CTA / logo glow --- */
+  --gradient-brand:
+    linear-gradient(135deg, var(--c-iris-500) 0%, #7E78E8 45%, var(--c-sky-500) 100%); /* @kind color */
+  --gradient-brand-soft:
+    linear-gradient(135deg, var(--c-aurora-iris) 0%, var(--c-aurora-peri) 50%, var(--c-aurora-sky) 100%); /* @kind color */
+
+  /* --- Branch accent: subtle directional tint for active branch surfaces --- */
+  --gradient-branch:
+    linear-gradient(135deg, rgba(111,107,226,0.10) 0%, rgba(51,140,224,0.06) 100%); /* @kind color */
+
+  /* --- Sheen: top highlight on glass/elevated surfaces --- */
+  --gradient-sheen:
+    linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 40%); /* @kind color */
+
+  /* --- Text-reveal protection (fade messages under sticky header) --- */
+  --gradient-fade-top:
+    linear-gradient(180deg, var(--bg) 12%, rgba(255,255,255,0) 100%); /* @kind color */
+}
+
+.dark,
+[data-theme="dark"] {
+  --gradient-aurora:
+    radial-gradient(120% 90% at 12% 8%,  rgba(111,107,226,0.30) 0%, rgba(111,107,226,0) 55%),
+    radial-gradient(110% 80% at 88% 4%,  rgba(51,140,224,0.24) 0%, rgba(51,140,224,0) 50%),
+    radial-gradient(120% 100% at 72% 100%, rgba(216,194,244,0.18) 0%, rgba(216,194,244,0) 55%),
+    radial-gradient(100% 90% at 18% 96%, rgba(56,165,120,0.16) 0%, rgba(56,165,120,0) 55%); /* @kind color */
+
+  --gradient-dawn:
+    linear-gradient(180deg, #0E0E18 0%, #111019 50%, #14121C 100%); /* @kind color */
+
+  --gradient-brand:
+    linear-gradient(135deg, var(--c-iris-400) 0%, #8E88EE 45%, var(--c-sky-400) 100%); /* @kind color */
+  --gradient-brand-soft:
+    linear-gradient(135deg, rgba(145,142,234,0.30) 0%, rgba(87,168,236,0.22) 100%); /* @kind color */
+
+  --gradient-branch:
+    linear-gradient(135deg, rgba(145,142,234,0.16) 0%, rgba(87,168,236,0.10) 100%); /* @kind color */
+
+  --gradient-sheen:
+    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 40%); /* @kind color */
+
+  --gradient-fade-top:
+    linear-gradient(180deg, var(--bg) 12%, rgba(13,13,20,0) 100%); /* @kind color */
+}
+
+/* ---- Ambient drift animation for aurora backdrops ----------------------
+   Apply: class "aurora-bg" on a positioned element. */
+@keyframes aurora-drift {
+  0%   { transform: translate3d(0,0,0) scale(1);    }
+  50%  { transform: translate3d(-2%,1.5%,0) scale(1.08); }
+  100% { transform: translate3d(0,0,0) scale(1);    }
+}
+
+.aurora-bg {
+  position: relative;
+  isolation: isolate;
+}
+.aurora-bg::before {
+  content: "";
+  position: absolute;
+  inset: -15%;
+  z-index: -1;
+  background: var(--gradient-aurora);
+  filter: blur(8px);
+  animation: aurora-drift var(--motion-aurora) var(--ease-calm) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora-bg::before { animation: none; }
+}

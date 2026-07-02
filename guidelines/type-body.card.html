@@ -1,0 +1,30 @@
+<!-- @dsCard group="Type" viewport="700x240" name="Body & Labels" subtitle="Albert Sans — body, caption, label, micro" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin: 0; background: var(--surface-1); }
+  .wrap { box-sizing: border-box; width: 700px; padding: 26px 32px; display: flex; flex-direction: column; gap: 14px; }
+  .row { display: flex; align-items: baseline; gap: 16px; }
+  .spec { font: var(--text-body-sm); color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; width: 150px; flex: none; }
+  .blg { font: var(--text-body-lg); color: var(--text-primary); }
+  .bd  { font: var(--text-body); color: var(--text-primary); }
+  .bsm { font: var(--text-body-sm); color: var(--text-secondary); }
+  .cap { font: var(--weight-regular) var(--fs-caption)/var(--lh-snug) var(--font-sans); color: var(--text-muted); }
+  .lbl { font: var(--text-label); color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+  .mic { font: var(--weight-medium) var(--fs-micro)/1 var(--font-sans); color: var(--text-muted); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="row"><span class="spec">Body Large · 18 / 400</span><span class="blg">A function that remembers.</span></div>
+    <div class="row"><span class="spec">Body · 16 / 400</span><span class="bd">Branch from any message to explore an alternative.</span></div>
+    <div class="row"><span class="spec">Body Small · 14 / 400</span><span class="bsm">Used for dense UI, message metadata, menus.</span></div>
+    <div class="row"><span class="spec">Caption · 13 / 400</span><span class="cap">AI can make mistakes</span></div>
+    <div class="row"><span class="spec">Label · 13 / 500</span><span class="lbl">Branch from</span></div>
+    <div class="row"><span class="spec">Micro · 11 / 500</span><span class="mic">NEW</span></div>
+  </div>
+</body>
+</html>

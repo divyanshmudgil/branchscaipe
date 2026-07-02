@@ -1,0 +1,32 @@
+/* ===========================================================================
+   Branchscaipe — Spacing & Sizing
+   4px base grid. Generous, intentional rhythm.
+   =========================================================================== */
+
+:root {
+  --space-0:   0px;
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-7:   32px;
+  --space-8:   40px;
+  --space-9:   48px;
+  --space-10:  64px;
+  --space-11:  80px;
+  --space-12:  96px;
+  --space-13:  128px;
+
+  /* Component sizing */
+  --size-control-sm: 32px;
+  --size-control-md: 40px;
+  --size-control-lg: 48px;
+
+  /* Layout */
+  --rail-width:        72px;   /* icon sidebar (matches wireframe) */
+  --sidebar-width:     280px;  /* expanded thread sidebar */
+  --content-max:       760px;  /* chat column reading width */
+  --composer-max:      768px;
+}

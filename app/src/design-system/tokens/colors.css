@@ -1,0 +1,181 @@
+/* ===========================================================================
+   Branchscaipe — Color System
+   Emotional goal: "calm intelligence". Aurora pastels over rich charcoal,
+   inspired by early-morning skies + ambient light. Desaturated, never neon.
+
+   Layers:
+     1. Primitive palette  (--c-*)  — raw hues, theme-independent
+     2. Semantic tokens     — light theme on :root, dark theme on .dark / [data-theme="dark"]
+   Consume the SEMANTIC tokens in product code, not the primitives.
+   =========================================================================== */
+
+:root {
+  /* ---- Primitive palette ------------------------------------------------ */
+  /* Iris — primary brand hue */
+  --c-iris-50:  #F1F1FD;
+  --c-iris-100: #E6E6FB;
+  --c-iris-200: #D2D1F8;
+  --c-iris-300: #B4B2F2;
+  --c-iris-400: #918EEA;
+  --c-iris-500: #6F6BE2;
+  --c-iris-600: #5A55D6;
+  --c-iris-700: #4A45BC;
+  --c-iris-800: #3D3997;
+  --c-iris-900: #2E2B70;
+
+  /* Sky — secondary hue */
+  --c-sky-50:  #ECF6FE;
+  --c-sky-100: #DAEDFD;
+  --c-sky-200: #B6DBFA;
+  --c-sky-300: #86C3F4;
+  --c-sky-400: #57A8EC;
+  --c-sky-500: #338CE0;
+  --c-sky-600: #2371C2;
+
+  /* Aurora accents — soft, for gradients + highlights */
+  --c-aurora-iris:  #B7B4F7;
+  --c-aurora-peri:  #AFC4F6;
+  --c-aurora-sky:   #ABDAF3;
+  --c-aurora-mint:  #B6ECD5;
+  --c-aurora-blush: #F6C4DD;
+  --c-aurora-peach: #F9D8B6;
+  --c-aurora-lilac: #D8C2F4;
+
+  /* Neutral — cool blue-grey ink (matches wireframe rgb(110,110,143)) */
+  --c-ink-0:   #FFFFFF;
+  --c-ink-25:  #FBFBFE;
+  --c-ink-50:  #F5F5FA;
+  --c-ink-100: #ECECF4;
+  --c-ink-200: #DEDEEA;
+  --c-ink-300: #C7C7DA;
+  --c-ink-400: #A6A6C0;
+  --c-ink-500: #82829E;
+  --c-ink-600: #62627E;
+  --c-ink-700: #494963;
+  --c-ink-800: #2E2E44;
+  --c-ink-900: #1A1A2B;
+  --c-ink-950: #101019;
+
+  /* Semantic hues */
+  --c-success: #38A578;
+  --c-success-soft: #DDF2E8;
+  --c-warning: #E2972F;
+  --c-warning-soft: #FBEBCF;
+  --c-error:   #DE5F5A;
+  --c-error-soft: #FADFDE;
+  --c-info:    #338CE0;
+  --c-info-soft: #DAEDFD;
+
+  /* =====================================================================
+     SEMANTIC — LIGHT THEME (default)
+     ===================================================================== */
+
+  /* Brand */
+  --brand-primary:        var(--c-iris-500);
+  --brand-primary-hover:  var(--c-iris-600);
+  --brand-primary-active: var(--c-iris-700);
+  --brand-primary-soft:   var(--c-iris-100);
+  --brand-on-primary:     #FFFFFF;
+  --brand-secondary:      var(--c-sky-500);
+  --brand-secondary-hover:var(--c-sky-600);
+  --brand-accent:         var(--c-aurora-lilac);
+
+  /* Semantic / status */
+  --color-success:      var(--c-success);
+  --color-success-bg:   var(--c-success-soft);
+  --color-warning:      var(--c-warning);
+  --color-warning-bg:   var(--c-warning-soft);
+  --color-error:        var(--c-error);
+  --color-error-bg:     var(--c-error-soft);
+  --color-info:         var(--c-info);
+  --color-info-bg:      var(--c-info-soft);
+
+  /* Surfaces */
+  --bg:                #FBFBFE;
+  --bg-aurora:         #F6F5FE; /* tinted base for atmospheric washes */
+  --surface-1:         #FFFFFF; /* primary surface — cards, panels */
+  --surface-2:         #F5F5FA; /* secondary surface — recessed, message pills */
+  --surface-3:         #ECECF4; /* tertiary — wells, code */
+  --surface-elevated:  #FFFFFF; /* popovers, menus (pair with shadow-lg) */
+  --surface-glass:     rgba(255,255,255,0.66);
+  --surface-glass-heavy: rgba(255,255,255,0.82);
+  --surface-hover:     #F0F0F8;
+  --surface-active:    #E8E8F3;
+  --surface-selected:  #ECEBFC; /* iris-tinted selection */
+  --surface-inverse:   #1A1A2B;
+
+  /* Text */
+  --text-primary:   #1A1A2B;
+  --text-secondary: #494963;
+  --text-muted:     #6E6E8F;
+  --text-disabled:  #B0B0C6;
+  --text-inverse:   #FFFFFF;
+  --text-brand:     var(--c-iris-600);
+  --text-on-accent: #2E2B70;
+  --text-link:      var(--c-iris-600);
+
+  /* Borders / dividers */
+  --border-subtle:  rgba(26,26,43,0.06);
+  --border-default: rgba(26,26,43,0.10);
+  --border-strong:  rgba(26,26,43,0.16);
+  --border-brand:   var(--c-iris-300);
+  --border-focus:   var(--c-iris-500);
+
+  color-scheme: light;
+}
+
+/* =======================================================================
+   SEMANTIC — DARK THEME ("first-class": rich charcoal, ambient aurora)
+   ======================================================================= */
+.dark,
+[data-theme="dark"] {
+  /* Brand — slightly brighter so it glows on charcoal */
+  --brand-primary:        var(--c-iris-400);
+  --brand-primary-hover:  var(--c-iris-300);
+  --brand-primary-active: #A6A3F0;
+  --brand-primary-soft:   rgba(145,142,234,0.16);
+  --brand-on-primary:     #14122B;
+  --brand-secondary:      var(--c-sky-400);
+  --brand-secondary-hover:var(--c-sky-300);
+  --brand-accent:         var(--c-aurora-lilac);
+
+  --color-success:      #4BBE8C;
+  --color-success-bg:   rgba(56,165,120,0.16);
+  --color-warning:      #ECA94A;
+  --color-warning-bg:   rgba(226,151,47,0.16);
+  --color-error:        #EC7A75;
+  --color-error-bg:     rgba(222,95,90,0.18);
+  --color-info:         #5BA8E8;
+  --color-info-bg:      rgba(51,140,224,0.16);
+
+  /* Surfaces — layered charcoal with a blue undertone */
+  --bg:                #0D0D14;
+  --bg-aurora:         #111019;
+  --surface-1:         #16161F;
+  --surface-2:         #1C1C28;
+  --surface-3:         #232331;
+  --surface-elevated:  #20202E;
+  --surface-glass:     rgba(24,24,34,0.62);
+  --surface-glass-heavy: rgba(24,24,34,0.82);
+  --surface-hover:     #232331;
+  --surface-active:    #2A2A3B;
+  --surface-selected:  #28273F;
+  --surface-inverse:   #ECECF5;
+
+  --text-primary:   #ECECF5;
+  --text-secondary: #B7B7CF;
+  --text-muted:     #82829E;
+  --text-disabled:  #565670;
+  --text-inverse:   #14141F;
+  --text-brand:     var(--c-iris-300);
+  --text-on-accent: #ECECF5;
+  --text-link:      var(--c-iris-300);
+
+  --border-subtle:  rgba(255,255,255,0.05);
+  --border-default: rgba(255,255,255,0.09);
+  --border-strong:  rgba(255,255,255,0.15);
+  --border-brand:   rgba(145,142,234,0.45);
+  --border-focus:   var(--c-iris-400);
+
+  color-scheme: dark;
+}

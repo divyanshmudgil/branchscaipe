@@ -1,0 +1,53 @@
+<!-- @dsCard group="Components" viewport="700x300" name="Forms — Input, Textarea, Select" subtitle="Input · Textarea · Select / Choose-parent picker" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body { margin: 0; background: var(--surface-1); }
+  #root { box-sizing: border-box; width: 700px; padding: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; }
+  .lbl { font: var(--weight-semibold) 10px/1 var(--font-sans); color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+  .col { display: flex; flex-direction: column; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const NS = window.BranchscaipeDesignSystem_0d3c10;
+  const { Input, Textarea, Select } = NS;
+  function Icon({ name, size = 18 }) {
+    const ref = React.useRef(null);
+    React.useEffect(() => {
+      if (ref.current && window.lucide) {
+        ref.current.innerHTML = "";
+        const i = document.createElement("i"); i.setAttribute("data-lucide", name); ref.current.appendChild(i);
+        window.lucide.createIcons({ attrs: { width: size, height: size, "stroke-width": 1.75 }, nameAttr: "data-lucide" });
+      }
+    });
+    return <span ref={ref} style={{ display: "inline-flex" }} />;
+  }
+  function Demo() {
+    const [q, setQ] = React.useState("");
+    const [t, setT] = React.useState("Explore the same idea but for beginners.");
+    const [p, setP] = React.useState("closure");
+    return (
+      <>
+        <div className="col"><div className="lbl">Search input (pill)</div>
+          <Input shape="pill" iconLeft={<Icon name="search" />} value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Search threads…" /></div>
+        <div className="col"><div className="lbl">Choose parent</div>
+          <Select value={p} onChange={setP} options={[{value:'closure',label:'Closure'},{value:'hooks',label:'Hooks'},{value:'main',label:'Main thread'}]} /></div>
+        <div className="col" style={{gridColumn:'1 / -1'}}><div className="lbl">Branch context</div>
+          <Textarea rows={3} value={t} onChange={(e)=>setT(e.target.value)} /></div>
+      </>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script>
+</body>
+</html>

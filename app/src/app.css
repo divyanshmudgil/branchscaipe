@@ -1,0 +1,45 @@
+/* Branchscaipe app — animations & utility classes that live alongside the
+   design-system tokens (kept here rather than in tokens/ since they're
+   app-specific interaction/reveal effects, not reusable design tokens). */
+
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--bg); }
+
+/* popover/menu entrance */
+@keyframes bscPop { from { opacity: 0; transform: translateY(-6px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+/* jump-to-message flash when navigating from search / starred / merge */
+@keyframes bscFlash { 0% { background: var(--surface-selected); } 100% { background: transparent; } }
+.bsc-flash { animation: bscFlash 1.6s var(--ease-calm); border-radius: var(--radius-lg); }
+@media (prefers-reduced-motion: reduce) { .bsc-flash { animation: none; } }
+
+/* spinner for voice transcribing state */
+@keyframes bscSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* ── Sidebar accent sphere ───────────────────────────── */
+/* Plain solid sidebar — white in light, black in dark. */
+.bsc-sidebar {
+  background: var(--surface-1);
+}
+.dark .bsc-sidebar {
+  background: var(--bg);
+}
+
+/* ── Logo reveal animation ─────────────────────────────────────── */
+@keyframes bscLogoLeft {
+  from { opacity: 0; transform: translateX(22px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+@keyframes bscLogoRight {
+  from { opacity: 0; transform: translateX(-22px); }
+  to   { opacity: 1; transform: translateX(0);     }
+}
+@keyframes bscLogoGlow {
+  0%   { filter: drop-shadow(0 0 20px oklch(0.60 0.24 262 / 0.90)); }
+  55%  { filter: drop-shadow(0 0 10px oklch(0.62 0.20 262 / 0.55)); }
+  100% { filter: none; }
+}
+/* Safety: if motion is reduced (or the animation can't run), always show the full wordmark */
+@media (prefers-reduced-motion: reduce) {
+  .bsc-wordmark > span { animation: none !important; opacity: 1 !important; filter: none !important; transform: none !important; }
+}
