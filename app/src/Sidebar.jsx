@@ -178,14 +178,18 @@ export function Sidebar({
   branchCount, starCount, theme,
   rootChats, activeChatId, onSelectChat,
   onThemeToggle, onProfileAction,
+  isMobile = false, mobileOpen = false, onMobileClose,
 }) {
   const [profileOpen, setProfileOpen] = React.useState(false);
   const [profileRect, setProfileRect] = React.useState(null);
   const [toggleHover, setToggleHover] = React.useState(false);
   const profileBtnRef = React.useRef(null);
 
-  const W = expanded ? 264 : 68;
-  const it = (p) => <SidebarItem {...p} expanded={expanded} />;
+  // On mobile the sidebar is a full drawer — always shows labels/chat list,
+  // regardless of the desktop expand/collapse toggle state.
+  const showExpanded = isMobile ? true : expanded;
+  const W = isMobile ? "min(85vw, 280px)" : (expanded ? 264 : 68);
+  const it = (p) => <SidebarItem {...p} expanded={showExpanded} />;
 
   const handleProfileToggle = () => {
     if (!profileOpen && profileBtnRef.current) {
@@ -194,13 +198,21 @@ export function Sidebar({
     setProfileOpen(v => !v);
   };
 
+  // Mobile: picking a destination should close the drawer, like ChatGPT/Gemini.
+  const closeIfMobile = () => { if (isMobile && onMobileClose) onMobileClose(); };
+  const handleSelectChat = (id) => { onSelectChat(id); closeIfMobile(); };
+  const handleNewChat = () => { onNewChat(); closeIfMobile(); };
+  const handleSearch = () => { onSearch(); closeIfMobile(); };
+  const handleSettings = () => { onSettings(); closeIfMobile(); };
+  const handleOpenPanel = (key) => { onOpenPanel(key); closeIfMobile(); };
+
   // Wordmark with "AI" in brand gradient
   const wordmark = (
     <div className="bsc-wordmark" style={{
       fontSize: 13, letterSpacing: "0.06em", display: "inline-flex", alignItems: "baseline",
-      marginLeft: expanded ? 8 : 0,
-      width: expanded ? "auto" : 0, overflow: "hidden",
-      opacity: expanded ? 1 : 0,
+      marginLeft: showExpanded ? 8 : 0,
+      width: showExpanded ? "auto" : 0, overflow: "hidden",
+      opacity: showExpanded ? 1 : 0,
       transition: "opacity var(--motion-fast) var(--ease-standard)",
     }}>
       <span style={{ color: "var(--text-primary)" }}>BRANCHSC</span>
@@ -214,28 +226,39 @@ export function Sidebar({
   );
 
   return (
-    // bsc-sidebar class provides animated gradient (see app.css)
-    <div
-      className="bsc-sidebar"
-      style={{
-        width: W, flex: "none", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 2,
-        padding: "12px 8px",
-        WebkitBackdropFilter: "var(--glass-blur)", backdropFilter: "var(--glass-blur)",
-        borderRight: "1px solid var(--border-subtle)", zIndex: "var(--z-rail)",
-        overflow: "hidden",
-        transition: "width var(--motion-medium) var(--ease-out)",
-      }}
-    >
+    <>
+      {isMobile && mobileOpen && <div className="bsc-scrim" onClick={onMobileClose} />}
+      {/* bsc-sidebar class provides animated gradient (see app.css) */}
+      <div
+        className="bsc-sidebar"
+        style={{
+          width: W, flex: "none", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 2,
+          padding: "12px 8px",
+          WebkitBackdropFilter: "var(--glass-blur)", backdropFilter: "var(--glass-blur)",
+          borderRight: "1px solid var(--border-subtle)",
+          overflow: "hidden",
+          ...(isMobile
+            ? {
+                position: "fixed", top: 0, left: 0, height: "100%", zIndex: "var(--z-modal)",
+                boxShadow: "var(--shadow-xl)",
+                transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
+                transition: "transform var(--motion-medium) var(--ease-out)",
+              }
+            : { zIndex: "var(--z-rail)", transition: "width var(--motion-medium) var(--ease-out)" }),
+        }}
+      >
       {/* Brand + toggle */}
       <div style={{
         display: "flex", alignItems: "center",
-        justifyContent: expanded ? "space-between" : "center",
+        justifyContent: showExpanded ? "space-between" : "center",
         height: 44, marginBottom: 2, flex: "none",
       }}>
         {wordmark}
           <button
-            type="button" onClick={onToggle} aria-label="Toggle sidebar"
-            title={expanded ? "Collapse sidebar" : "Expand sidebar"}
+            type="button"
+            onClick={isMobile ? onMobileClose : onToggle}
+            aria-label={isMobile ? "Close menu" : "Toggle sidebar"}
+            title={isMobile ? "Close menu" : (expanded ? "Collapse sidebar" : "Expand sidebar")}
             onMouseEnter={() => setToggleHover(true)}
             onMouseLeave={() => setToggleHover(false)}
             style={{
@@ -247,27 +270,27 @@ export function Sidebar({
               transition: "background var(--motion-fast) var(--ease-standard)",
             }}
           >
-            <I name="panel-left" size={18} />
+            <I name={isMobile ? "x" : "panel-left"} size={18} />
           </button>
       </div>
 
-      {it({ icon: "square-pen", label: "New chat", onClick: onNewChat, accent: true })}
-      {it({ icon: "search",     label: "Search",   onClick: onSearch })}
+      {it({ icon: "square-pen", label: "New chat", onClick: handleNewChat, accent: true })}
+      {it({ icon: "search",     label: "Search",   onClick: handleSearch })}
 
       <div style={{ height: 1, background: "var(--border-subtle)", margin: "4px 2px" }} />
 
-      {/* ── Chat list: ONLY rendered when expanded ───────────────────────
+      {/* ── Chat list: ONLY rendered when expanded (desktop) or always (mobile drawer) ──
           Container keeps flex:1 so layout below stays anchored to the bottom.
           When collapsed the space is empty — no chat icons visible.          */}
       <div
         className="bsc-scroll"
         style={{
           flex: 1, minHeight: 0,
-          overflowY: expanded ? "auto" : "hidden",
+          overflowY: showExpanded ? "auto" : "hidden",
           display: "flex", flexDirection: "column", gap: 1, paddingBottom: 4,
         }}
       >
-        {expanded && rootChats.length === 0 && (
+        {showExpanded && rootChats.length === 0 && (
           <div style={{
             padding: "20px 8px", textAlign: "center",
             fontFamily: "var(--font-sans)", fontSize: "var(--fs-caption)",
@@ -277,13 +300,13 @@ export function Sidebar({
           </div>
         )}
         {/* Only render chat rows when expanded — collapsed shows no chat icons */}
-        {expanded && rootChats.map(chat => (
+        {showExpanded && rootChats.map(chat => (
           <ChatListItem
             key={chat.id}
             chat={chat}
             expanded={true}
             active={chat.id === activeChatId}
-            onClick={() => onSelectChat(chat.id)}
+            onClick={() => handleSelectChat(chat.id)}
           />
         ))}
       </div>
@@ -292,23 +315,23 @@ export function Sidebar({
 
       {it({
         icon: "git-branch", label: "Branches",
-        onClick: () => onOpenPanel("branches"),
+        onClick: () => handleOpenPanel("branches"),
         active: activePanel === "branches", badge: branchCount,
       })}
       {it({
         icon: "star", label: "Starred",
-        onClick: () => onOpenPanel("starred"),
+        onClick: () => handleOpenPanel("starred"),
         active: activePanel === "starred", badge: starCount,
       })}
       {it({
         icon: "history", label: "History",
-        onClick: () => onOpenPanel("history"),
+        onClick: () => handleOpenPanel("history"),
         active: activePanel === "history",
       })}
 
       <div style={{ height: 1, background: "var(--border-subtle)", margin: "4px 2px" }} />
 
-      {it({ icon: "settings", label: "Settings", onClick: onSettings })}
+      {it({ icon: "settings", label: "Settings", onClick: handleSettings })}
 
       {/* Profile with dropdown — menu uses position:fixed to escape overflow:hidden */}
       <div style={{ position: "relative", flex: "none" }}>
@@ -327,10 +350,10 @@ export function Sidebar({
           type="button"
           onClick={handleProfileToggle}
           style={{
-            display: "flex", alignItems: "center", gap: expanded ? 10 : 0,
+            display: "flex", alignItems: "center", gap: showExpanded ? 10 : 0,
             width: "100%", height: 44,
-            padding: expanded ? "0 6px" : "0",
-            justifyContent: expanded ? "flex-start" : "center",
+            padding: showExpanded ? "0 6px" : "0",
+            justifyContent: showExpanded ? "flex-start" : "center",
             border: "none", borderRadius: "var(--radius-md)",
             background: profileOpen ? "var(--surface-hover)" : "transparent",
             cursor: "pointer",
@@ -342,8 +365,8 @@ export function Sidebar({
           <Avatar name="Divyansh Mudgil" kind="user" size={30} style={{ background: "var(--c-aurora-mint)", flex: "none" }} />
           <div style={{
             minWidth: 0, overflow: "hidden",
-            width: expanded ? "auto" : 0,
-            opacity: expanded ? 1 : 0,
+            width: showExpanded ? "auto" : 0,
+            opacity: showExpanded ? 1 : 0,
             transition: "opacity var(--motion-fast) var(--ease-standard)",
           }}>
             <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--fs-body-sm)", fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap" }}>Divyansh Mudgil</div>
@@ -351,6 +374,7 @@ export function Sidebar({
           </div>
         </button>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

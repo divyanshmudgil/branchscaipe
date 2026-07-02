@@ -4,7 +4,7 @@ import React from "react";
 import { Icon as I } from "./Icon.jsx";
 import { relTime } from "./logic.js";
 
-export function Panel({ kind, branches, rootId, activeId, onSelect, onClose, onRename, onContextMenu, starred, onJumpStar, onUnstar, editRequestId, onEditConsumed }) {
+export function Panel({ kind, branches, rootId, activeId, onSelect, onClose, onRename, onContextMenu, starred, onJumpStar, onUnstar, editRequestId, onEditConsumed, fullScreen = false }) {
   const titles = { branches: "Branches", starred: "Starred", history: "History" };
   const subtitle = {
     branches: "Your conversation lineage. Select to switch — it's just like changing chats.",
@@ -12,10 +12,18 @@ export function Panel({ kind, branches, rootId, activeId, onSelect, onClose, onR
     history: "Every thread and branch, most recent first.",
   };
 
+  // On mobile the panel takes over the whole screen (like ChatGPT's mobile History/
+  // Search view) rather than sitting beside the chat, so picking something should
+  // also close it — there's no chat visible behind it to reveal.
+  const handleSelect = fullScreen ? (id) => { onSelect(id); onClose(); } : onSelect;
+
   return (
     <div className="bsc-panel" style={{
-      width: 312, flex: "none", display: "flex", flexDirection: "column", minHeight: 0,
-      background: "var(--surface-1)", borderRight: "1px solid var(--border-subtle)", zIndex: 150,
+      width: fullScreen ? "100%" : 312, flex: "none", display: "flex", flexDirection: "column", minHeight: 0,
+      background: "var(--surface-1)", borderRight: fullScreen ? "none" : "1px solid var(--border-subtle)",
+      ...(fullScreen
+        ? { position: "fixed", inset: 0, zIndex: "var(--z-modal)" }
+        : { zIndex: 150 }),
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 14px 10px" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
@@ -27,9 +35,9 @@ export function Panel({ kind, branches, rootId, activeId, onSelect, onClose, onR
       <div style={{ padding: "0 16px 12px", fontFamily: "var(--font-sans)", fontSize: "var(--fs-caption)", color: "var(--text-muted)", lineHeight: 1.45 }}>{subtitle[kind]}</div>
 
       <div className="bsc-scroll" style={{ flex: 1, overflowY: "auto", padding: "0 10px 14px", minHeight: 0 }}>
-        {kind === "branches" && <BranchTree branches={branches} rootId={rootId} activeId={activeId} onSelect={onSelect} onRename={onRename} onContextMenu={onContextMenu} editRequestId={editRequestId} onEditConsumed={onEditConsumed} />}
-        {kind === "starred" && <StarredList starred={starred} onJump={onJumpStar} onUnstar={onUnstar} />}
-        {kind === "history" && <HistoryList branches={branches} activeId={activeId} onSelect={onSelect} />}
+        {kind === "branches" && <BranchTree branches={branches} rootId={rootId} activeId={activeId} onSelect={handleSelect} onRename={onRename} onContextMenu={onContextMenu} editRequestId={editRequestId} onEditConsumed={onEditConsumed} />}
+        {kind === "starred" && <StarredList starred={starred} onJump={fullScreen ? (bid, mid) => { onJumpStar(bid, mid); onClose(); } : onJumpStar} onUnstar={onUnstar} />}
+        {kind === "history" && <HistoryList branches={branches} activeId={activeId} onSelect={handleSelect} />}
       </div>
     </div>
   );

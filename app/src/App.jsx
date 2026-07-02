@@ -6,6 +6,7 @@ import { Button, IconButton } from "./design-system/components/core/index.js";
 import { Dialog, Toast, Tooltip } from "./design-system/components/feedback/index.js";
 import { Icon as I } from "./Icon.jsx";
 import { uid, lineage, contextMessages, autoName, generateReply } from "./logic.js";
+import { useViewport } from "./useViewport.js";
 import { Sidebar } from "./Sidebar.jsx";
 import { Panel } from "./Panel.jsx";
 import { TopBar } from "./TopBar.jsx";
@@ -45,6 +46,9 @@ export function App() {
   const [selMenu, setSelMenu] = React.useState(null);
   const [highlightId, setHighlightId] = React.useState(null);
   const [treeEditId, setTreeEditId] = React.useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
+
+  const { isMobile, isTouch } = useViewport();
 
   const scrollRef = React.useRef(null);
   const msgNodes = React.useRef({});
@@ -65,6 +69,9 @@ export function App() {
   }, [branches, activeId, theme, density, confirmMergePref, sidebarExpanded, isTemporary]);
 
   React.useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3400); return () => clearTimeout(t); } }, [toast]);
+
+  // Drop the off-canvas drawer state if the viewport grows past mobile.
+  React.useEffect(() => { if (!isMobile) setMobileNavOpen(false); }, [isMobile]);
 
   React.useEffect(() => {
     const k = (e) => {
@@ -398,6 +405,7 @@ export function App() {
         onSelectChat={navigate}
         onThemeToggle={() => setTheme(t => t === "dark" ? "light" : "dark")}
         onProfileAction={handleProfileAction}
+        isMobile={isMobile} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)}
       />
 
       {activePanel && (
@@ -408,17 +416,21 @@ export function App() {
           starred={starred} onJumpStar={jumpToMessage}
           onUnstar={(bid, mid) => setBranch(bid, (b) => ({ ...b, messages: b.messages.map((m) => m.id === mid ? { ...m, starred: false } : m) }))}
           editRequestId={treeEditId} onEditConsumed={() => setTreeEditId(null)}
+          fullScreen={isMobile}
         />
       )}
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, position: "relative", background: "var(--bg)" }}>
         <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
-          {/* Landing header — theme toggle + temp chat, shown only when no branch is active */}
+          {/* Landing header — hamburger (mobile) + theme toggle + temp chat, shown only when no branch is active */}
           {!branch && (
             <div style={{
-              display: "flex", alignItems: "center", justifyContent: "flex-end",
-              height: 56, padding: "0 20px", flex: "none",
+              display: "flex", alignItems: "center", justifyContent: isMobile ? "space-between" : "flex-end",
+              height: 56, padding: isMobile ? "0 10px" : "0 20px", flex: "none",
             }}>
+              {isMobile && (
+                <IconButton icon={<I name="menu" />} label="Open menu" onClick={() => setMobileNavOpen(true)} />
+              )}
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <Tooltip content={theme === "dark" ? "Light mode" : "Dark mode"} side="bottom">
                   <IconButton
@@ -446,11 +458,12 @@ export function App() {
               onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
               isTemporary={isTemporary} onStartTemporary={startTemporaryChat}
               onToast={setToast}
+              isMobile={isMobile} onOpenMobileNav={() => setMobileNavOpen(true)}
             />
           )}
 
           {isEmpty ? (
-            <EmptyState onSend={send} input={input} setInput={setInput} onToast={setToast} />
+            <EmptyState onSend={send} input={input} setInput={setInput} onToast={setToast} isMobile={isMobile} />
           ) : (
             <>
               <div onScrollCapture={closeTransients} style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -467,9 +480,13 @@ export function App() {
                   onJumpParent={() => navigate(branch.parentId)}
                   onJumpSource={(sid) => navigate(sid)}
                   scrollRef={scrollRef} registerMsgRef={registerMsgRef} highlightId={highlightId}
+                  isTouch={isTouch} isMobile={isMobile}
                 />
               </div>
-              <div style={{ padding: "0 24px 22px", flex: "none" }}>
+              <div style={{
+                padding: isMobile ? "0 12px calc(14px + env(safe-area-inset-bottom))" : "0 24px 22px",
+                flex: "none",
+              }}>
                 <AppComposer
                   value={input}
                   onChange={(e) => setInput(e.target.value)}

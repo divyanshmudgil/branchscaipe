@@ -13,6 +13,7 @@ export function TopBar({
   theme, onToggleTheme,
   isTemporary, onStartTemporary,
   onToast,
+  isMobile = false, onOpenMobileNav,
 }) {
   const [tempHover, setTempHover] = React.useState(false);
 
@@ -21,11 +22,14 @@ export function TopBar({
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      gap: 12, height: 64, padding: "0 18px 0 20px", flex: "none",
+      gap: isMobile ? 6 : 12, height: 64, padding: isMobile ? "0 10px" : "0 18px 0 20px", flex: "none",
     }}>
-      {/* Left: breadcrumb + temporary indicator */}
+      {/* Left: hamburger (mobile) + breadcrumb + temporary indicator */}
       <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}>
-        <Breadcrumb nodes={nodes} onNavigate={onNavigate} onRename={onRename} />
+        {isMobile && (
+          <IconButton icon={<I name="menu" />} label="Open menu" onClick={onOpenMobileNav} style={{ flex: "none" }} />
+        )}
+        <Breadcrumb nodes={nodes} onNavigate={onNavigate} onRename={onRename} maxVisible={isMobile ? 2 : 4} />
         {isTemporary && (
           <span style={{
             display: "inline-flex", alignItems: "center", gap: 5,
@@ -43,7 +47,11 @@ export function TopBar({
 
       {/* Right: action buttons */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, flex: "none" }}>
-        {inBranch && (
+        {inBranch && (isMobile ? (
+          <Tooltip content="Merge to parent" side="bottom">
+            <IconButton icon={<I name="git-merge" />} label="Merge to parent" variant="soft" onClick={onMerge} />
+          </Tooltip>
+        ) : (
           <button
             type="button" onClick={onMerge} style={mergeBtn}
             onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-hover)"; }}
@@ -51,7 +59,7 @@ export function TopBar({
           >
             <I name="git-merge" size={15} /> Merge to parent
           </button>
-        )}
+        ))}
 
         <Tooltip content={theme === "dark" ? "Light mode" : "Dark mode"} side="bottom">
           <IconButton icon={<I name={theme === "dark" ? "sun" : "moon"} />} label="Toggle theme" onClick={onToggleTheme} />

@@ -6,8 +6,11 @@ import React from "react";
 import { Icon as I } from "./Icon.jsx";
 import { relTime } from "./logic.js";
 
-export function Response({ msg, inBranch, onAction, onContextMenu, onSelectText, registerRef }) {
+export function Response({ msg, inBranch, onAction, onContextMenu, onSelectText, registerRef, isTouch = false }) {
   const [hover, setHover] = React.useState(false);
+  // Touch devices have no hover — the toolbar has to be reachable by default,
+  // not revealed only on a mouseenter that will never fire.
+  const toolbarVisible = hover || isTouch;
   const [copied, setCopied] = React.useState(false);
   const [overflowOpen, setOverflowOpen] = React.useState(false);
   const bodyRef = React.useRef(null);
@@ -131,9 +134,9 @@ export function Response({ msg, inBranch, onAction, onContextMenu, onSelectText,
       {/* Action toolbar: Copy · Branch · Retry + overflow */}
       <div style={{
         display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap",
-        opacity: hover ? 1 : 0,
-        transform: hover ? "none" : "translateY(-2px)",
-        pointerEvents: hover ? "auto" : "none",
+        opacity: toolbarVisible ? 1 : 0,
+        transform: toolbarVisible ? "none" : "translateY(-2px)",
+        pointerEvents: toolbarVisible ? "auto" : "none",
         transition: "opacity var(--motion-fast) var(--ease-standard), transform var(--motion-fast) var(--ease-standard)",
       }}>
         <Btn icon={copied ? "check" : "copy"} label={copied ? "Copied" : "Copy"} onClick={doCopy} />

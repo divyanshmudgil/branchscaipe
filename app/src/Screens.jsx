@@ -304,7 +304,7 @@ const composerIconBtn = {
 };
 
 // ── EmptyState — animated BRANCHSCAIPE logo (plays once per session) ──────────
-export function EmptyState({ onSend, input, setInput, onToast }) {
+export function EmptyState({ onSend, input, setInput, onToast, isMobile = false }) {
   // Animation plays every time EmptyState mounts (CSS handles single-play per mount).
   const shouldAnimate = true;
 
@@ -328,13 +328,13 @@ export function EmptyState({ onSend, input, setInput, onToast }) {
   return (
     <div style={{
       flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-      justifyContent: "center", padding: "0 24px", gap: 28, minHeight: 0,
+      justifyContent: "center", padding: isMobile ? "0 16px" : "0 24px", gap: isMobile ? 20 : 28, minHeight: 0,
     }}>
       <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
 
         {/* Animated wordmark */}
         <div className="bsc-wordmark" style={{
-          fontSize: 52, display: "inline-flex", alignItems: "baseline",
+          fontSize: isMobile ? 32 : 52, display: "inline-flex", alignItems: "baseline",
           letterSpacing: "0.08em", fontWeight: 700,
         }}>
           <span style={{
