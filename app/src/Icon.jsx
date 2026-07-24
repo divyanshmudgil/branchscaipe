@@ -3,6 +3,7 @@
 // kebab-case name string, matching the design system's Lucide convention
 // (1.75 stroke, 20px default in chrome, 16px inline).
 import {
+  AlertTriangle,
   ArrowRight,
   Check,
   ChevronRight,
@@ -35,6 +36,7 @@ import {
   Send,
   Settings,
   Sparkles,
+  Square,
   SquarePen,
   Star,
   StarOff,
@@ -44,6 +46,7 @@ import {
 } from "lucide-react";
 
 const ICONS = {
+  "alert-triangle": AlertTriangle,
   "arrow-right": ArrowRight,
   check: Check,
   "chevron-right": ChevronRight,
@@ -76,6 +79,7 @@ const ICONS = {
   send: Send,
   settings: Settings,
   sparkles: Sparkles,
+  square: Square,
   "square-pen": SquarePen,
   star: Star,
   "star-off": StarOff,

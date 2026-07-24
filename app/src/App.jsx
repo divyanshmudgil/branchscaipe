@@ -5,7 +5,8 @@ import React from "react";
 import { Button, IconButton } from "./design-system/components/core/index.js";
 import { Dialog, Toast, Tooltip } from "./design-system/components/feedback/index.js";
 import { Icon as I } from "./Icon.jsx";
-import { uid, lineage, contextMessages, autoName, generateReply } from "./logic.js";
+import { uid, lineage, contextMessages, autoName } from "./logic.js";
+import { streamChat } from "./api.js";
 import { useViewport } from "./useViewport.js";
 import { Sidebar } from "./Sidebar.jsx";
 import { Panel } from "./Panel.jsx";
@@ -52,7 +53,7 @@ export function App() {
 
   const scrollRef = React.useRef(null);
   const msgNodes = React.useRef({});
-  const replyTimer = React.useRef(null);
+  const abortRef = React.useRef(null);
   const pendingJump = React.useRef(null);
   const branchesRef = React.useRef(branches);
   branchesRef.current = branches;
@@ -118,9 +119,75 @@ export function App() {
   // ── helpers ──
   const setBranch = (id, fn) => setBranches((bs) => ({ ...bs, [id]: fn(bs[id]) }));
 
-  const contextTopics = () => branch
-    ? contextMessages(branches, activeId).filter((m) => m.role === "assistant" && m.topic).map((m) => m.topic)
-    : [];
+  // ── assistant streaming — shared by send() and retry() ──
+  // Streams a reply scoped to exactly this branch's own context (contextMessages
+  // already excludes sibling branches and anything past the fork point — see
+  // logic.js) and writes tokens into `assistantMsgId` as they arrive. If
+  // `isNewMessage` is false, the first token replaces that message's existing
+  // text instead of appending a new bubble (used by retry).
+  const runAssistantReply = (targetId, assistantMsgId, isNewMessage, stopBeforeMsgId) => {
+    // Only one generation at a time — starting a new one (e.g. Retry while a
+    // send is still streaming) cancels whatever was in flight first.
+    abortRef.current?.abort();
+
+    const full = contextMessages(branchesRef.current, targetId);
+    // Retry: send everything up to (but not including) the answer being
+    // regenerated, so the model isn't biased by the very reply it's redoing.
+    const cutIdx = stopBeforeMsgId ? full.findIndex((m) => m.id === stopBeforeMsgId) : -1;
+    const scoped = cutIdx === -1 ? full : full.slice(0, cutIdx);
+    const history = scoped.map((m) => ({ role: m.role, text: m.text }));
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setStatus("thinking");
+    let started = false;
+
+    streamChat({
+      messages: history,
+      signal: controller.signal,
+      onToken: (text) => {
+        if (!started) {
+          started = true;
+          setStatus("streaming");
+          setBranches((bs) => {
+            const b = bs[targetId];
+            if (!b) return bs;
+            const messages = isNewMessage
+              ? [...b.messages, { id: assistantMsgId, role: "assistant", text }]
+              : b.messages.map((m) => (m.id === assistantMsgId ? { ...m, text } : m));
+            return { ...bs, [targetId]: { ...b, messages } };
+          });
+        } else {
+          setBranches((bs) => {
+            const b = bs[targetId];
+            if (!b) return bs;
+            return {
+              ...bs,
+              [targetId]: {
+                ...b,
+                messages: b.messages.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text + text } : m)),
+              },
+            };
+          });
+        }
+      },
+      onDone: () => {
+        abortRef.current = null;
+        setStatus("idle");
+      },
+      onError: (message) => {
+        abortRef.current = null;
+        setStatus("idle");
+        setToast({ tone: "error", icon: "alert-triangle", title: "Couldn't get a response", desc: message });
+      },
+    });
+  };
+
+  const stopGenerating = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setStatus("idle");
+  };
 
   // ── send — auto-creates a chat if activeId is null ──
   const send = (text) => {
@@ -145,7 +212,7 @@ export function App() {
     const firstUser = b0.messages.filter((m) => m.role === "user").length === 0;
     const userMsg = { id: uid("m"), role: "user", text: t };
 
-    // Update ref synchronously so the timeout closure reads correct data
+    // Update ref synchronously so runAssistantReply reads correct data
     branchesRef.current = { ...branchesRef.current, [targetId]: { ...b0, messages: [...b0.messages, userMsg] } };
 
     setBranches((bs) => {
@@ -154,21 +221,7 @@ export function App() {
       return { ...bs, [targetId]: { ...b, name, messages: [...b.messages, userMsg] } };
     });
 
-    setStatus("thinking");
-    clearTimeout(replyTimer.current);
-    replyTimer.current = setTimeout(() => {
-      const cur = branchesRef.current[targetId];
-      if (!cur) return;
-      const ctxTopics = contextMessages(branchesRef.current, targetId)
-        .filter((m) => m.role === "assistant" && m.topic).map((m) => m.topic);
-      const reply = generateReply({ branch: cur, userText: t, contextTopics: ctxTopics, merged: cur._lastMerge });
-      setBranches(bs => {
-        const b = bs[targetId];
-        if (!b) return bs;
-        return { ...bs, [targetId]: { ...b, messages: [...b.messages, { id: uid("m"), role: "assistant", text: reply }] } };
-      });
-      setStatus("idle");
-    }, 1050 + Math.random() * 350);
+    runAssistantReply(targetId, uid("m"), true);
   };
 
   // ── new chat ──
@@ -242,17 +295,7 @@ export function App() {
     if (!branch) return;
     const idx = branch.messages.findIndex((m) => m.id === msg.id);
     if (idx < 0) return;
-    let userText = "";
-    for (let i = idx - 1; i >= 0; i--) { if (branch.messages[i].role === "user") { userText = branch.messages[i].text; break; } }
-    setStatus("thinking");
-    clearTimeout(replyTimer.current);
-    replyTimer.current = setTimeout(() => {
-      const cur = branchesRef.current[activeId];
-      if (!cur) return;
-      const reply = generateReply({ branch: cur, userText: userText || "continue", contextTopics: contextTopics(), retry: true });
-      setBranch(activeId, (b) => ({ ...b, messages: b.messages.map((m) => m.id === msg.id ? { ...m, text: reply } : m) }));
-      setStatus("idle");
-    }, 950 + Math.random() * 300);
+    runAssistantReply(activeId, msg.id, false, msg.id);
   };
 
   // ── star / copy ──
@@ -321,7 +364,7 @@ export function App() {
         .filter((x) => x.role === "user" || x.role === "assistant")
         .map((x) => ({ ...x, id: uid("m"), starred: false, fromMerge: m.sourceId }));
     }
-    setBranches((bs) => ({ ...bs, [m.target]: { ...bs[m.target], _lastMerge: src.name, messages: [...bs[m.target].messages, divider, ...inserts] } }));
+    setBranches((bs) => ({ ...bs, [m.target]: { ...bs[m.target], messages: [...bs[m.target].messages, divider, ...inserts] } }));
     setMerge(null);
     setActiveId(m.target);
     pendingJump.current = { messageId: divider.id, flashOnly: true };
@@ -493,6 +536,8 @@ export function App() {
                   onSend={send}
                   branchingFrom={inBranch ? (branch.branchSeed || (branches[branch.parentId] || {}).name) : null}
                   onToast={setToast}
+                  isGenerating={status !== "idle"}
+                  onStop={stopGenerating}
                 />
               </div>
             </>

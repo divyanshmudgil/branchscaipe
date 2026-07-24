@@ -6,7 +6,7 @@ import { Input, Select } from "./design-system/components/forms/index.js";
 import { Icon as I } from "./Icon.jsx";
 
 // ── AppComposer ───────────────────────────────────────────────────────────────
-export function AppComposer({ value, onChange, onSend, branchingFrom, disabled, onToast }) {
+export function AppComposer({ value, onChange, onSend, branchingFrom, disabled, onToast, isGenerating = false, onStop }) {
   const [attachOpen, setAttachOpen] = React.useState(false);
   const [voiceState, setVoiceState] = React.useState("idle"); // idle | recording | transcribing
   const [pulseBright, setPulseBright] = React.useState(false);
@@ -17,7 +17,7 @@ export function AppComposer({ value, onChange, onSend, branchingFrom, disabled, 
   const recognitionRef = React.useRef(null);
   const transcriptRef = React.useRef("");
 
-  const canSend = value && value.trim().length > 0 && !disabled && voiceState === "idle";
+  const canSend = value && value.trim().length > 0 && !disabled && !isGenerating && voiceState === "idle";
 
   // Close attachment menu on outside click
   React.useEffect(() => {
@@ -179,7 +179,7 @@ export function AppComposer({ value, onChange, onSend, branchingFrom, disabled, 
                                              "Ask me anything…"
           }
           rows={1}
-          disabled={disabled || voiceState !== "idle"}
+          disabled={disabled || voiceState !== "idle" || isGenerating}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); canSend && onSend && onSend(); } }}
           style={{
             width: "100%", border: "none", outline: "none", resize: "none",
@@ -271,19 +271,23 @@ export function AppComposer({ value, onChange, onSend, branchingFrom, disabled, 
               <I name="mic" size={16} />
             </button>
             <button
-              type="button" onClick={() => canSend && onSend && onSend()}
-              disabled={!canSend} aria-label="Send"
+              type="button"
+              onClick={() => { if (isGenerating) onStop && onStop(); else canSend && onSend && onSend(); }}
+              disabled={!isGenerating && !canSend}
+              aria-label={isGenerating ? "Stop generating" : "Send"}
+              title={isGenerating ? "Stop generating" : "Send"}
               style={{
                 display: "inline-flex", alignItems: "center", justifyContent: "center",
-                width: 36, height: 36, borderRadius: "var(--radius-full)", border: "none",
-                background: canSend ? "var(--gradient-brand)" : "var(--surface-3)",
-                color: canSend ? "#fff" : "var(--text-disabled)",
-                boxShadow: canSend ? "var(--shadow-glow-soft)" : "none",
-                cursor: canSend ? "pointer" : "not-allowed",
+                width: 36, height: 36, borderRadius: "var(--radius-full)",
+                border: isGenerating ? "1px solid var(--border-default)" : "none",
+                background: isGenerating ? "var(--surface-2)" : canSend ? "var(--gradient-brand)" : "var(--surface-3)",
+                color: isGenerating ? "var(--text-primary)" : canSend ? "#fff" : "var(--text-disabled)",
+                boxShadow: !isGenerating && canSend ? "var(--shadow-glow-soft)" : "none",
+                cursor: isGenerating || canSend ? "pointer" : "not-allowed",
                 transition: "background var(--motion-fast), box-shadow var(--motion-fast)",
               }}
             >
-              <I name="send" size={15} />
+              <I name={isGenerating ? "square" : "send"} size={isGenerating ? 13 : 15} />
             </button>
           </div>
         </div>

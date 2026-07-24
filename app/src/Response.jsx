@@ -5,6 +5,7 @@
 import React from "react";
 import { Icon as I } from "./Icon.jsx";
 import { relTime } from "./logic.js";
+import { Markdown } from "./Markdown.jsx";
 
 export function Response({ msg, inBranch, onAction, onContextMenu, onSelectText, registerRef, isTouch = false }) {
   const [hover, setHover] = React.useState(false);
@@ -117,18 +118,8 @@ export function Response({ msg, inBranch, onAction, onContextMenu, onSelectText,
       )}
 
       {/* Message body */}
-      <div
-        ref={bodyRef}
-        onMouseUp={handleMouseUp}
-        style={{
-          fontFamily: "var(--font-sans)", fontSize: "var(--fs-body)",
-          lineHeight: "var(--lh-relaxed)", color: "var(--text-primary)",
-          letterSpacing: "var(--tracking-wide)",
-        }}
-      >
-        {msg.text.split("\n\n").map((p, k) => (
-          <p key={k} style={{ margin: k === 0 ? 0 : "12px 0 0" }}>{p}</p>
-        ))}
+      <div ref={bodyRef} onMouseUp={handleMouseUp}>
+        <Markdown>{msg.text}</Markdown>
       </div>
 
       {/* Action toolbar: Copy · Branch · Retry + overflow */}
