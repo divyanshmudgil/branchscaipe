@@ -4,9 +4,11 @@
 // else in the server changes.
 import { config } from "../config/env.js";
 import { GeminiProvider } from "./GeminiProvider.js";
+import { GroqProvider } from "./GroqProvider.js";
 
 const registry = {
   gemini: GeminiProvider,
+  groq: GroqProvider,
 };
 
 let instance = null;
