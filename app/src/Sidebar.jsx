@@ -6,15 +6,18 @@ import ReactDOM from "react-dom";
 import { Avatar } from "./design-system/components/core/index.js";
 import { Icon as I } from "./Icon.jsx";
 
-function ChatListItem({ chat, active, expanded, onClick }) {
+// Root element is a div (not a button) so it can host a nested hover-reveal
+// options button — same reason Panel.jsx's BranchTree row uses a div too.
+function ChatListItem({ chat, active, expanded, onClick, onContextMenu }) {
   const [hover, setHover] = React.useState(false);
   const bg = active
     ? "var(--surface-selected)"
     : hover ? "var(--surface-hover)" : "transparent";
   return (
-    <button
-      type="button" onClick={onClick} title={chat.name}
+    <div
+      onClick={onClick} title={chat.name}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      onContextMenu={(e) => { e.preventDefault(); onContextMenu && onContextMenu(chat, e); }}
       style={{
         display: "flex", alignItems: "center", gap: 9, width: "100%", height: 36,
         padding: "0 8px", background: bg,
@@ -35,7 +38,20 @@ function ChatListItem({ chat, active, expanded, onClick }) {
       }}>
         {chat.name}
       </span>
-    </button>
+      {hover && (
+        <button
+          type="button" aria-label="Chat options"
+          onClick={(e) => { e.stopPropagation(); onContextMenu && onContextMenu(chat, e); }}
+          style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            width: 24, height: 24, flex: "none", border: "none", borderRadius: "var(--radius-sm)",
+            background: "transparent", color: "var(--text-muted)", cursor: "pointer",
+          }}
+        >
+          <I name="more-horizontal" size={14} />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -182,6 +198,7 @@ export function Sidebar({
   onThemeToggle, onProfileAction,
   isMobile = false, mobileOpen = false, onMobileClose,
   authIsGuest = false, authProfile = null, onSignOut,
+  onContextMenu,
 }) {
   const [profileOpen, setProfileOpen] = React.useState(false);
   const [profileRect, setProfileRect] = React.useState(null);
@@ -310,6 +327,7 @@ export function Sidebar({
             expanded={true}
             active={chat.id === activeChatId}
             onClick={() => handleSelectChat(chat.id)}
+            onContextMenu={onContextMenu}
           />
         ))}
       </div>

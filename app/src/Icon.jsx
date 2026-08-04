@@ -41,6 +41,7 @@ import {
   Star,
   StarOff,
   Sun,
+  Trash2,
   User,
   X,
 } from "lucide-react";
@@ -84,6 +85,7 @@ const ICONS = {
   star: Star,
   "star-off": StarOff,
   sun: Sun,
+  trash: Trash2,
   user: User,
   x: X,
 };

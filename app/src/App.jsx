@@ -18,8 +18,17 @@ import {
 } from "./Screens.jsx";
 import { useAuth } from "./auth/hooks/useAuth.ts";
 import { Landing } from "./Landing.tsx";
+import { useHydrateFromSupabase } from "./sync/useHydrateFromSupabase.ts";
+import { useDirtyBranchSync } from "./sync/useDirtyBranchSync.ts";
+import * as guestImportService from "./sync/guestImportService.ts";
+import { deleteConversationCascade, deleteBranchCascade } from "./sync/supabaseSyncService.ts";
 
 const LS_KEY = "bsc.app.v4"; // bumped to clear stale hardcoded data
+
+// Shared by both loading gates below so the visual is defined once.
+function BlankLoading() {
+  return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", width: "100%", background: "var(--bg)" }} />;
+}
 
 // ── App — auth gate ──
 // Loads once auth status resolves: an authenticated session or a chosen
@@ -28,19 +37,22 @@ const LS_KEY = "bsc.app.v4"; // bumped to clear stale hardcoded data
 // tab). Anything else shows the Landing screen. AppShell is remounted
 // (fresh `key`) whenever the underlying identity changes, so a sign-out
 // never carries stale in-memory state into the next session.
+//
+// For authenticated users, chat data is fetched from Supabase here —
+// before AppShell mounts, not inside it — so there's exactly one clean
+// paint instead of a flash of stale localStorage content. Guests never
+// reach useHydrateFromSupabase with a real id, so they never touch
+// Supabase at all (enforced at this call site, not just inside the hook).
 export function App() {
-  const { status, isGuest, profile, signOut } = useAuth();
+  const { status, isGuest, user, profile, signOut } = useAuth();
   const [gateToast, setGateToast] = React.useState(null);
+  const hydration = useHydrateFromSupabase(status === "authenticated" ? (user?.id ?? null) : null);
 
   React.useEffect(() => {
     if (gateToast) { const t = setTimeout(() => setGateToast(null), 3400); return () => clearTimeout(t); }
   }, [gateToast]);
 
-  if (status === "loading") {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", width: "100%", background: "var(--bg)" }} />
-    );
-  }
+  if (status === "loading") return <BlankLoading />;
 
   if (status === "unauthenticated") {
     return (
@@ -55,23 +67,43 @@ export function App() {
     );
   }
 
-  return <AppShell key={profile?.id || "guest"} isGuest={isGuest} authProfile={profile} onSignOut={signOut} />;
+  if (status === "authenticated" && hydration.status !== "ready" && hydration.status !== "error") {
+    return <BlankLoading />;
+  }
+
+  return (
+    <AppShell
+      key={profile?.id || "guest"}
+      isGuest={isGuest} authProfile={profile} onSignOut={signOut}
+      userId={status === "authenticated" ? (user?.id ?? null) : null}
+      initialBranches={status === "authenticated" && hydration.status === "ready" ? hydration.branches : null}
+      hydrationError={status === "authenticated" ? hydration.error : null}
+      knownConversationIds={hydration.knownConversationIds}
+      knownBranchIds={hydration.knownBranchIds}
+    />
+  );
 }
 
-function AppShell({ isGuest, authProfile, onSignOut }) {
+function AppShell({
+  isGuest, authProfile, onSignOut, userId,
+  initialBranches, hydrationError, knownConversationIds, knownBranchIds,
+}) {
   // Guest data is intentionally session-scoped (sessionStorage): it should
   // not survive closing the tab/browser, per the Guest Mode spec. Signed-in
-  // users keep the existing localStorage persistence — no Supabase sync
-  // exists yet (that's Milestone 4).
+  // users keep the existing localStorage persistence as a local cache —
+  // Supabase is the source of truth for reads (via initialBranches below),
+  // this local copy is now write-only-on-the-way-out, never read back
+  // post-hydration.
   const storage = isGuest ? window.sessionStorage : window.localStorage;
 
   // ── persistence ──
   const load = () => { try { return JSON.parse(storage.getItem(LS_KEY) || "null"); } catch { return null; } };
   const saved = load();
 
-  const [branches, setBranches] = React.useState(() => (saved && saved.branches) || {});
+  const [branches, setBranches] = React.useState(() => initialBranches || (saved && saved.branches) || {});
   const [activeId, setActiveId] = React.useState(() => {
-    if (saved && saved.activeId && saved.branches && saved.branches[saved.activeId]) return saved.activeId;
+    const pool = initialBranches || (saved && saved.branches);
+    if (saved && saved.activeId && pool && pool[saved.activeId]) return saved.activeId;
     return null;
   });
   const [theme, setTheme] = React.useState(() => (saved && saved.theme) || "light");
@@ -102,6 +134,42 @@ function AppShell({ isGuest, authProfile, onSignOut }) {
   const pendingJump = React.useRef(null);
   const branchesRef = React.useRef(branches);
   branchesRef.current = branches;
+
+  const dirtySync = useDirtyBranchSync({
+    enabled: !isGuest,
+    userId,
+    branchesRef,
+    knownConversationIds,
+    knownBranchIds,
+    onError: (message) => setToast({ tone: "error", icon: "alert-triangle", title: "Couldn't save to your account", desc: message }),
+  });
+
+  // Surface a failed initial fetch without blocking the app — it stays
+  // fully usable locally and self-heals as the user makes new changes.
+  React.useEffect(() => {
+    if (hydrationError) {
+      setToast({ tone: "error", icon: "alert-triangle", title: "Couldn't load your chats", desc: hydrationError });
+    }
+  }, []); // eslint-disable-line -- hydrationError is fixed for this AppShell's whole lifetime (see key={profile?.id} in App())
+
+  // Guest → account import: offered once per sign-in if this tab still has
+  // leftover guest chat data in sessionStorage from before signing in.
+  const [guestImportOffer, setGuestImportOffer] = React.useState(null);
+  React.useEffect(() => {
+    if (!isGuest && guestImportService.hasGuestSnapshot()) {
+      setGuestImportOffer(guestImportService.readGuestSnapshot());
+    }
+  }, []); // eslint-disable-line -- once per AppShell mount, i.e. once per sign-in
+
+  const importGuestData = (offer) => {
+    if (!offer) return;
+    setBranches((bs) => ({ ...bs, ...offer.branches }));
+    Object.keys(offer.branches).forEach((id) => dirtySync.markDirty(id));
+    if (offer.activeId && offer.branches[offer.activeId]) setActiveId(offer.activeId);
+    guestImportService.clearGuestSnapshot();
+    setGuestImportOffer(null);
+    setToast({ tone: "success", icon: "check", title: "Guest chats imported", desc: null });
+  };
 
   const registerMsgRef = (id, node) => { if (node) msgNodes.current[id] = node; else delete msgNodes.current[id]; };
 
@@ -162,7 +230,9 @@ function AppShell({ isGuest, authProfile, onSignOut }) {
   starred.sort((a, b) => b.ts - a.ts);
 
   // ── helpers ──
-  const setBranch = (id, fn) => setBranches((bs) => ({ ...bs, [id]: fn(bs[id]) }));
+  // Funnels toggleStar/renameBranch/onUnstar — marking dirty here once
+  // covers all three call sites.
+  const setBranch = (id, fn) => { setBranches((bs) => ({ ...bs, [id]: fn(bs[id]) })); dirtySync.markDirty(id); };
 
   // ── assistant streaming — shared by send() and retry() ──
   // Streams a reply scoped to exactly this branch's own context (contextMessages
@@ -215,15 +285,21 @@ function AppShell({ isGuest, authProfile, onSignOut }) {
             };
           });
         }
+        // Cheap: just resets a debounce timer, no network call until 900ms
+        // of silence — safe to call on every token.
+        dirtySync.markDirty(targetId);
       },
       onDone: () => {
         abortRef.current = null;
         setStatus("idle");
+        dirtySync.markDirty(targetId);
       },
       onError: (message) => {
         abortRef.current = null;
         setStatus("idle");
         setToast({ tone: "error", icon: "alert-triangle", title: "Couldn't get a response", desc: message });
+        // Persist whatever partial reply made it into state before erroring.
+        dirtySync.markDirty(targetId);
       },
     });
   };
@@ -243,7 +319,7 @@ function AppShell({ isGuest, authProfile, onSignOut }) {
     let targetId = activeId;
 
     if (!targetId) {
-      targetId = uid("chat");
+      targetId = uid();
       const newB = { id: targetId, name: "New chat", autoNamed: false, parentId: null, branchPointId: null, branchSeed: null, createdAt: Date.now(), messages: [] };
       branchesRef.current = { ...branchesRef.current, [targetId]: newB };
       setBranches(bs => ({ ...bs, [targetId]: newB }));
@@ -255,7 +331,7 @@ function AppShell({ isGuest, authProfile, onSignOut }) {
 
     const isInBranch = !!b0.parentId;
     const firstUser = b0.messages.filter((m) => m.role === "user").length === 0;
-    const userMsg = { id: uid("m"), role: "user", text: t };
+    const userMsg = { id: uid(), role: "user", text: t };
 
     // Update ref synchronously so runAssistantReply reads correct data
     branchesRef.current = { ...branchesRef.current, [targetId]: { ...b0, messages: [...b0.messages, userMsg] } };
@@ -265,14 +341,15 @@ function AppShell({ isGuest, authProfile, onSignOut }) {
       const name = (!isInBranch && firstUser && (b.name === "New chat" || !b.name)) ? autoName(t) : b.name;
       return { ...bs, [targetId]: { ...b, name, messages: [...b.messages, userMsg] } };
     });
+    dirtySync.markDirty(targetId);
 
-    runAssistantReply(targetId, uid("m"), true);
+    runAssistantReply(targetId, uid(), true);
   };
 
   // ── new chat ──
   const newChat = () => {
     cleanupTemporary();
-    const id = uid("chat");
+    const id = uid();
     setBranches((bs) => ({ ...bs, [id]: { id, name: "New chat", autoNamed: false, parentId: null, branchPointId: null, branchSeed: null, createdAt: Date.now(), messages: [] } }));
     setActiveId(id); setActivePanel(null); setInput("");
   };
@@ -295,7 +372,7 @@ function AppShell({ isGuest, authProfile, onSignOut }) {
       return;
     }
     cleanupTemporary();
-    const id = uid("tmp");
+    const id = uid();
     setBranches(bs => ({
       ...bs,
       [id]: { id, name: "Temporary chat", autoNamed: false, parentId: null, branchPointId: null, branchSeed: null, createdAt: Date.now(), messages: [], _temporary: true },
@@ -308,7 +385,7 @@ function AppShell({ isGuest, authProfile, onSignOut }) {
   const createBranch = (msg, opts) => {
     opts = opts || {};
     const seedText = opts.quote || msg.topic || branch.name;
-    const id = uid("br");
+    const id = uid();
     const name = autoName(seedText);
     const seedLabel = opts.quote
       ? `"${opts.quote.slice(0, 28)}${opts.quote.length > 28 ? "…" : ""}"`
@@ -317,6 +394,7 @@ function AppShell({ isGuest, authProfile, onSignOut }) {
       ...bs,
       [id]: { id, name, autoNamed: true, parentId: activeId, branchPointId: msg.id, branchSeed: seedLabel, quote: opts.quote || null, createdAt: Date.now(), messages: [] },
     }));
+    dirtySync.markDirty(id);
     setActiveId(id); setInput("");
     setToast({ tone: "info", icon: "git-branch", title: `Branch "${name}" created`, desc: "Full context is inherited. The parent thread stays untouched." });
   };
@@ -325,12 +403,13 @@ function AppShell({ isGuest, authProfile, onSignOut }) {
     const p = branches[parentId];
     if (!p) return;
     const lastMsg = p.messages.filter((m) => m.role === "assistant").slice(-1)[0] || p.messages.slice(-1)[0];
-    const id = uid("br");
+    const id = uid();
     const name = autoName(p.name + " detail");
     setBranches((bs) => ({
       ...bs,
       [id]: { id, name, autoNamed: true, parentId, branchPointId: lastMsg ? lastMsg.id : null, branchSeed: p.name, quote: null, createdAt: Date.now(), messages: [] },
     }));
+    dirtySync.markDirty(id);
     setActiveId(id);
     setToast({ tone: "info", icon: "git-branch", title: `Branch "${name}" created`, desc: `Branched from "${p.name}".` });
   };
@@ -375,6 +454,47 @@ function AppShell({ isGuest, authProfile, onSignOut }) {
     walk(id); return out;
   };
 
+  // ── delete chat / branch ──
+  const [deleteConfirm, setDeleteConfirm] = React.useState(null); // { id, name, isRoot, count } | null
+
+  const requestDelete = (b) => {
+    setDeleteConfirm({ id: b.id, name: b.name, isRoot: !b.parentId, count: descendants(b.id).size });
+  };
+
+  const deleteBranch = (id) => {
+    const b = branches[id];
+    if (!b) return;
+    const toRemove = new Set([id, ...descendants(id)]);
+    const isRoot = !b.parentId;
+
+    let nextActiveId = activeId;
+    if (activeId && toRemove.has(activeId)) {
+      nextActiveId = isRoot ? (rootChats.find((r) => !toRemove.has(r.id))?.id ?? null) : b.parentId;
+    }
+
+    // Cancel any in-flight debounce for everything about to be removed —
+    // otherwise a stale flush could re-upsert (resurrect) a row moments
+    // after we tell the server to delete it.
+    dirtySync.cancelPending(Array.from(toRemove));
+
+    setBranches((bs) => {
+      const nb = { ...bs };
+      toRemove.forEach((rid) => delete nb[rid]);
+      return nb;
+    });
+    if (nextActiveId !== activeId) setActiveId(nextActiveId);
+    if (activePanel === "branches" && rootChatId && toRemove.has(rootChatId)) setActivePanel(null);
+
+    if (!isGuest && userId) {
+      const remoteCall = isRoot ? deleteConversationCascade(id) : deleteBranchCascade(id);
+      remoteCall.catch((err) => {
+        setToast({ tone: "error", icon: "alert-triangle", title: "Couldn't delete from your account", desc: err?.message || "Try again." });
+      });
+    }
+
+    setToast({ tone: "success", icon: "trash", title: isRoot ? "Chat deleted" : "Branch deleted", desc: null });
+  };
+
   // Only show direct ancestors (parent chain) — not lateral chats or unrelated branches.
   const mergeTargets = (sourceId) => {
     const anc = lineage(branches, sourceId).slice(0, -1).map((b) => b.id);
@@ -400,16 +520,17 @@ function AppShell({ isGuest, authProfile, onSignOut }) {
   const doMerge = (m) => {
     const ts = Date.now();
     const src = branches[m.sourceId];
-    const divider = { id: uid("mg"), role: "merge", source: src.name, sourceId: m.sourceId, scope: m.scope, ts };
+    const divider = { id: uid(), role: "merge", source: src.name, sourceId: m.sourceId, scope: m.scope, ts };
     let inserts;
     if (m.scope === "response") {
-      inserts = [{ ...m.sourceMsg, id: uid("m"), starred: false, fromMerge: m.sourceId }];
+      inserts = [{ ...m.sourceMsg, id: uid(), starred: false, fromMerge: m.sourceId }];
     } else {
       inserts = src.messages
         .filter((x) => x.role === "user" || x.role === "assistant")
-        .map((x) => ({ ...x, id: uid("m"), starred: false, fromMerge: m.sourceId }));
+        .map((x) => ({ ...x, id: uid(), starred: false, fromMerge: m.sourceId }));
     }
     setBranches((bs) => ({ ...bs, [m.target]: { ...bs[m.target], messages: [...bs[m.target].messages, divider, ...inserts] } }));
+    dirtySync.markDirty(m.target); // merge never mutates the source branch, only the target
     setMerge(null);
     setActiveId(m.target);
     pendingJump.current = { messageId: divider.id, flashOnly: true };
@@ -467,6 +588,7 @@ function AppShell({ isGuest, authProfile, onSignOut }) {
       { id: "rename", label: "Rename", icon: "pencil", run: () => { setActivePanel("branches"); setTreeEditId(b.id); } },
     ];
     if (b.parentId) items.push({ divider: true }, { id: "merge", label: "Merge to parent…", icon: "git-merge", run: () => { setActiveId(b.id); setTimeout(() => openMergeConversation(), 0); } });
+    items.push({ divider: true }, { id: "delete", label: b.parentId ? "Delete branch" : "Delete chat", icon: "trash", danger: true, run: () => requestDelete(b) });
     setCtxMenu({ x: e.clientX, y: e.clientY, items });
   };
 
@@ -495,6 +617,7 @@ function AppShell({ isGuest, authProfile, onSignOut }) {
         onProfileAction={handleProfileAction}
         isMobile={isMobile} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)}
         authIsGuest={isGuest} authProfile={authProfile} onSignOut={onSignOut}
+        onContextMenu={openBranchMenu}
       />
 
       {activePanel && (
@@ -601,6 +724,32 @@ function AppShell({ isGuest, authProfile, onSignOut }) {
           <Button variant="brand" iconLeft={<I name="git-merge" size={16} />} onClick={() => doMerge(merge)}>Merge</Button>
         </>}>
         {merge && <MergeBody scope={merge.scope} source={branches[merge.sourceId].name} targets={mergeTgts} target={merge.target} setTarget={(v) => setMerge((m) => ({ ...m, target: v }))} />}
+      </Dialog>
+
+      {/* Delete confirm */}
+      <Dialog open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)}
+        title={deleteConfirm ? (deleteConfirm.isRoot ? "Delete this chat?" : "Delete this branch?") : ""}
+        description={deleteConfirm ? (
+          deleteConfirm.count > 0
+            ? `"${deleteConfirm.name}" and its ${deleteConfirm.count} branch${deleteConfirm.count === 1 ? "" : "es"} will be permanently deleted. This can't be undone.`
+            : `"${deleteConfirm.name}" will be permanently deleted. This can't be undone.`
+        ) : ""}
+        width={440}
+        footer={deleteConfirm && <>
+          <Button variant="ghost" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+          <Button variant="danger" iconLeft={<I name="trash" size={16} />} onClick={() => { deleteBranch(deleteConfirm.id); setDeleteConfirm(null); }}>Delete</Button>
+        </>}>
+      </Dialog>
+
+      {/* Guest → account import */}
+      <Dialog open={!!guestImportOffer} onClose={() => setGuestImportOffer(null)}
+        title="Import your guest chats?"
+        description="You have chats from before you signed in. Import them into your account, or start fresh — they won't be offered again after this."
+        width={460}
+        footer={<>
+          <Button variant="ghost" onClick={() => { guestImportService.clearGuestSnapshot(); setGuestImportOffer(null); }}>Discard</Button>
+          <Button variant="brand" onClick={() => importGuestData(guestImportOffer)}>Import</Button>
+        </>}>
       </Dialog>
 
       {/* Search */}

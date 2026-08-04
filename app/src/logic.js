@@ -8,8 +8,9 @@
 //            = merge divider:  { id, role:"merge", source, sourceId, scope, ts }
 // ─────────────────────────────────────────────────────────────────────────
 
-let _n = 1;
-export const uid = (p) => `${p || "id"}-${Date.now().toString(36)}-${(_n++).toString(36)}`;
+// Real UUIDs — required so client-generated ids can double as Supabase's
+// `uuid` primary keys with no server-side id-translation step.
+export const uid = () => crypto.randomUUID();
 
 // ── Lineage & context ──────────────────────────────────────────────────────
 export function lineage(branches, id) {
