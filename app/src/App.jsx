@@ -16,12 +16,57 @@ import {
   EmptyState, AppComposer, CommandPalette, SettingsBody, ShortcutsBody,
   MergeBody, ContextMenu, SelectionMenu,
 } from "./Screens.jsx";
+import { useAuth } from "./auth/hooks/useAuth.ts";
+import { Landing } from "./Landing.tsx";
 
 const LS_KEY = "bsc.app.v4"; // bumped to clear stale hardcoded data
 
+// ── App — auth gate ──
+// Loads once auth status resolves: an authenticated session or a chosen
+// Guest mode both mount AppShell (guest chats live in sessionStorage
+// instead of localStorage — see AppShell below — so they don't outlive the
+// tab). Anything else shows the Landing screen. AppShell is remounted
+// (fresh `key`) whenever the underlying identity changes, so a sign-out
+// never carries stale in-memory state into the next session.
 export function App() {
+  const { status, isGuest, profile, signOut } = useAuth();
+  const [gateToast, setGateToast] = React.useState(null);
+
+  React.useEffect(() => {
+    if (gateToast) { const t = setTimeout(() => setGateToast(null), 3400); return () => clearTimeout(t); }
+  }, [gateToast]);
+
+  if (status === "loading") {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", width: "100%", background: "var(--bg)" }} />
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <>
+        <Landing onToast={setGateToast} />
+        {gateToast && (
+          <div style={{ position: "fixed", right: 24, bottom: 24, zIndex: "var(--z-toast)" }}>
+            <Toast tone={gateToast.tone} icon={<I name={gateToast.icon} size={18} />} title={gateToast.title} description={gateToast.desc} onClose={() => setGateToast(null)} />
+          </div>
+        )}
+      </>
+    );
+  }
+
+  return <AppShell key={profile?.id || "guest"} isGuest={isGuest} authProfile={profile} onSignOut={signOut} />;
+}
+
+function AppShell({ isGuest, authProfile, onSignOut }) {
+  // Guest data is intentionally session-scoped (sessionStorage): it should
+  // not survive closing the tab/browser, per the Guest Mode spec. Signed-in
+  // users keep the existing localStorage persistence — no Supabase sync
+  // exists yet (that's Milestone 4).
+  const storage = isGuest ? window.sessionStorage : window.localStorage;
+
   // ── persistence ──
-  const load = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || "null"); } catch { return null; } };
+  const load = () => { try { return JSON.parse(storage.getItem(LS_KEY) || "null"); } catch { return null; } };
   const saved = load();
 
   const [branches, setBranches] = React.useState(() => (saved && saved.branches) || {});
@@ -66,7 +111,7 @@ export function App() {
     if (isTemporary) return; // never persist temporary chats
     const saveable = Object.fromEntries(Object.entries(branches).filter(([, b]) => !b._temporary));
     const data = { branches: saveable, activeId, theme, density, confirmMergePref, sidebarExpanded };
-    try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch {}
+    try { storage.setItem(LS_KEY, JSON.stringify(data)); } catch {}
   }, [branches, activeId, theme, density, confirmMergePref, sidebarExpanded, isTemporary]);
 
   React.useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3400); return () => clearTimeout(t); } }, [toast]);
@@ -449,6 +494,7 @@ export function App() {
         onThemeToggle={() => setTheme(t => t === "dark" ? "light" : "dark")}
         onProfileAction={handleProfileAction}
         isMobile={isMobile} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)}
+        authIsGuest={isGuest} authProfile={authProfile} onSignOut={onSignOut}
       />
 
       {activePanel && (

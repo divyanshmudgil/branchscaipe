@@ -41,8 +41,10 @@ function ChatListItem({ chat, active, expanded, onClick }) {
 
 // ProfileMenu — uses position:fixed so it escapes the sidebar's overflow:hidden.
 // anchorRect: the profile button's getBoundingClientRect() captured at open time.
-function ProfileMenu({ theme, anchorRect, onClose, onThemeToggle, onShortcuts, onSettings }) {
+function ProfileMenu({ theme, anchorRect, onClose, onThemeToggle, onShortcuts, onSettings, isGuest, profile, onSignOut }) {
   const ref = React.useRef(null);
+  const displayName = isGuest ? "Guest" : (profile?.fullName || profile?.email || "Signed in");
+  const displaySub = isGuest ? "Nothing is saved to your account" : (profile?.email || "");
 
   React.useEffect(() => {
     const h = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
@@ -100,10 +102,10 @@ function ProfileMenu({ theme, anchorRect, onClose, onThemeToggle, onShortcuts, o
       boxShadow: "var(--shadow-lg)", animation: "bscPop var(--motion-fast) var(--ease-out)",
     }}>
       <div style={{ padding: "8px 12px 10px", borderBottom: "1px solid var(--border-subtle)", marginBottom: 6 }}>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--fs-body-sm)", fontWeight: 700, color: "var(--text-primary)" }}>Divyansh Mudgil</div>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--fs-micro)", color: "var(--text-muted)" }}>divyansh@example.com · Pro plan</div>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--fs-body-sm)", fontWeight: 700, color: "var(--text-primary)" }}>{displayName}</div>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--fs-micro)", color: "var(--text-muted)" }}>{displaySub}</div>
       </div>
-      {menuItem("user", "Profile", () => {})}
+      {!isGuest && menuItem("user", "Profile", () => {})}
       {menuItem(
         theme === "dark" ? "sun" : "moon",
         theme === "dark" ? "Switch to light mode" : "Switch to dark mode",
@@ -112,7 +114,7 @@ function ProfileMenu({ theme, anchorRect, onClose, onThemeToggle, onShortcuts, o
       {menuItem("keyboard", "Keyboard shortcuts", onShortcuts)}
       {menuItem("settings", "Settings", onSettings)}
       <div style={{ height: 1, background: "var(--border-subtle)", margin: "6px 4px" }} />
-      {menuItem("log-out", "Sign out", () => {}, true)}
+      {menuItem("log-out", isGuest ? "Exit guest mode" : "Sign out", onSignOut, true)}
     </div>,
     document.body
   );
@@ -179,6 +181,7 @@ export function Sidebar({
   rootChats, activeChatId, onSelectChat,
   onThemeToggle, onProfileAction,
   isMobile = false, mobileOpen = false, onMobileClose,
+  authIsGuest = false, authProfile = null, onSignOut,
 }) {
   const [profileOpen, setProfileOpen] = React.useState(false);
   const [profileRect, setProfileRect] = React.useState(null);
@@ -343,6 +346,9 @@ export function Sidebar({
             onThemeToggle={onThemeToggle}
             onShortcuts={() => { onProfileAction("shortcuts"); setProfileOpen(false); }}
             onSettings={() => { onSettings(); setProfileOpen(false); }}
+            isGuest={authIsGuest}
+            profile={authProfile}
+            onSignOut={() => { setProfileOpen(false); onSignOut?.(); }}
           />
         )}
         <button
@@ -362,15 +368,29 @@ export function Sidebar({
           onMouseEnter={(e) => { if (!profileOpen) e.currentTarget.style.background = "var(--surface-hover)"; }}
           onMouseLeave={(e) => { if (!profileOpen) e.currentTarget.style.background = "transparent"; }}
         >
-          <Avatar name="Divyansh Mudgil" kind="user" size={30} style={{ background: "var(--c-aurora-mint)", flex: "none" }} />
+          {authIsGuest ? (
+            <span style={{
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              width: 30, height: 30, flex: "none", borderRadius: "var(--radius-full)",
+              background: "var(--surface-2)", color: "var(--text-muted)",
+            }}>
+              <I name="user" size={16} />
+            </span>
+          ) : (
+            <Avatar src={authProfile?.avatarUrl} name={authProfile?.fullName || authProfile?.email || "User"} kind="user" size={30} style={{ background: "var(--c-aurora-mint)", flex: "none" }} />
+          )}
           <div style={{
             minWidth: 0, overflow: "hidden",
             width: showExpanded ? "auto" : 0,
             opacity: showExpanded ? 1 : 0,
             transition: "opacity var(--motion-fast) var(--ease-standard)",
           }}>
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--fs-body-sm)", fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap" }}>Divyansh Mudgil</div>
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--fs-micro)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>Pro plan</div>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--fs-body-sm)", fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
+              {authIsGuest ? "Guest" : (authProfile?.fullName || authProfile?.email || "Signed in")}
+            </div>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--fs-micro)", color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {authIsGuest ? "Not signed in" : (authProfile?.email || "")}
+            </div>
           </div>
         </button>
       </div>
