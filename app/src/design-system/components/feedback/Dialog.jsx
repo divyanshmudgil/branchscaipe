@@ -31,7 +31,7 @@ export function Dialog({ open, onClose, title, description, children, footer, wi
           maxWidth: "100%",
           padding: "26px",
           background: "var(--surface-elevated)",
-          border: "1px solid var(--border-subtle)",
+          border: "1px solid transparent",
           borderRadius: "var(--radius-2xl)",
           boxShadow: "var(--shadow-xl)",
           animation: "bscDialog var(--motion-slow) var(--ease-spring)",

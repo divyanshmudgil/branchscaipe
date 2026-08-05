@@ -3,7 +3,47 @@
    app-specific interaction/reveal effects, not reusable design tokens). */
 
 html, body, #root { height: 100%; margin: 0; }
-body { background: var(--bg); }
+body { background: var(--bg); position: relative; }
+
+/* Subtle aurora wash behind the whole app shell — mostly invisible on its
+   own, but gives the glass sidebar's backdrop-blur something to diffuse
+   instead of blurring a flat color. Reuses tokens already defined for
+   exactly this ("Aurora pastels... ambient light") but previously unused. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 0%, var(--c-aurora-iris) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 45% at 100% 20%, var(--c-aurora-sky) 0%, transparent 60%),
+    var(--bg-aurora);
+  opacity: 0.10;
+}
+.dark body::before { opacity: 0.14; }
+
+/* ── Theme toggle — radial reveal via the native View Transitions API ──
+   The new theme grows in from a circle near the top of the window instead
+   of snapping instantly. Origin is a fixed top-center point (not the
+   trigger button's position) since theme can be toggled from several
+   places — TopBar, the sidebar's profile menu, Settings — at different
+   screen positions; a fixed origin keeps the effect consistent everywhere. */
+::view-transition-old(root) {
+  animation: none;
+  z-index: -1;
+}
+::view-transition-new(root) {
+  animation: bscThemeReveal 560ms var(--ease-spring) forwards;
+}
+@keyframes bscThemeReveal {
+  from { clip-path: circle(0% at 50% 0%); }
+  to   { clip-path: circle(150% at 50% 0%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none; }
+}
 
 /* popover/menu entrance */
 @keyframes bscPop { from { opacity: 0; transform: translateY(-6px) scale(0.98); } to { opacity: 1; transform: none; } }
@@ -16,13 +56,15 @@ body { background: var(--bg); }
 /* spinner for voice transcribing state */
 @keyframes bscSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-/* ── Sidebar accent sphere ───────────────────────────── */
-/* Plain solid sidebar — white in light, black in dark. */
+/* ── Sidebar — translucent glass panel, recessed vs. the brighter chat pane ──
+   Deliberately a bit darker/more opaque than the shared --surface-glass
+   token (used elsewhere for popovers etc) so the panel itself stays
+   legible against the aurora wash instead of nearly disappearing. */
 .bsc-sidebar {
-  background: var(--surface-1);
+  background: rgba(225, 224, 240, 0.78);
 }
 .dark .bsc-sidebar {
-  background: var(--bg);
+  background: rgba(15, 15, 22, 0.88);
 }
 
 /* ── Logo reveal animation ─────────────────────────────────────── */

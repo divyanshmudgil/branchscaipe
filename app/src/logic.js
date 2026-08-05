@@ -41,6 +41,23 @@ export function contextMessages(branches, id) {
   return acc.filter((m) => m.role === "user" || m.role === "assistant");
 }
 
+// Builds the full nested branch tree (not just one lineage path) rooted at
+// `rootId`, for the expanded branch-navigation overlay. Sibling branches
+// are sorted oldest-first, matching the order they were created in.
+export function branchTree(branches, rootId) {
+  const root = branches[rootId];
+  if (!root) return null;
+  const build = (b) => ({
+    id: b.id,
+    name: b.name,
+    children: Object.values(branches)
+      .filter((x) => x.parentId === b.id)
+      .sort((a, c) => a.createdAt - c.createdAt)
+      .map(build),
+  });
+  return build(root);
+}
+
 // ── Auto-naming ─────────────────────────────────────────────────────────────
 const STOP_WORDS = new Set(
   "the a an of to for and or but is are be how what why when where can could would should do does this that these those your you i we it on in with from about into give me show tell explain describe compare discuss versus vs please just also".split(" ")

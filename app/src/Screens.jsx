@@ -167,7 +167,7 @@ export function AppComposer({ value, onChange, onSend, branchingFrom, disabled, 
         background: "var(--surface-glass-heavy)",
         WebkitBackdropFilter: "var(--glass-blur)", backdropFilter: "var(--glass-blur)",
         border: "1px solid var(--border-default)",
-        borderRadius: "var(--radius-xl)", boxShadow: "var(--shadow-md)",
+        borderRadius: "var(--radius-xl)",
         padding: "14px 16px 10px",
       }}>
         <textarea
@@ -230,7 +230,7 @@ export function AppComposer({ value, onChange, onSend, branchingFrom, disabled, 
                 width: 230, padding: 6,
                 background: "var(--surface-glass-heavy)",
                 WebkitBackdropFilter: "var(--glass-blur)", backdropFilter: "var(--glass-blur)",
-                border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-lg)",
+                border: "1px solid transparent", borderRadius: "var(--radius-lg)",
                 boxShadow: "var(--shadow-lg)", animation: "bscPop var(--motion-fast) var(--ease-out)",
               }}>
                 <div style={{ padding: "4px 10px 8px", fontFamily: "var(--font-sans)", fontSize: "var(--fs-micro)", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--text-muted)" }}>
@@ -581,7 +581,7 @@ export function ContextMenu({ x, y, items, onClose }) {
       position: "fixed", left: pos.left, top: pos.top, visibility: pos.visibility, zIndex: "var(--z-modal)",
       minWidth: 184, padding: 6,
       background: "var(--surface-glass-heavy)", WebkitBackdropFilter: "var(--glass-blur)", backdropFilter: "var(--glass-blur)",
-      border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-lg)",
+      border: "1px solid transparent", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-lg)",
       animation: "bscPop var(--motion-fast) var(--ease-out)",
     }}>
       {items.map((it, i) => it.divider

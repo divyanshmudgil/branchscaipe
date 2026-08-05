@@ -3,13 +3,14 @@
 // Share popover now shows a success toast on copy.
 // Temporary badge shown in breadcrumb row when in ephemeral mode.
 import React from "react";
+import { motion } from "framer-motion";
 import { IconButton } from "./design-system/components/core/index.js";
 import { Tooltip } from "./design-system/components/feedback/index.js";
-import { LineageBar as Breadcrumb } from "./LineageBar.jsx";
+import { BranchNav, NAV_PILL_HEIGHT } from "./BranchNav.jsx";
 import { Icon as I } from "./Icon.jsx";
 
 export function TopBar({
-  nodes, inBranch, onNavigate, onRename, onMerge,
+  nodes, branches, rootChatId, inBranch, onNavigate, onRename, onMerge,
   theme, onToggleTheme,
   isTemporary, onStartTemporary,
   onToast,
@@ -21,21 +22,20 @@ export function TopBar({
 
   return (
     <div style={{
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      gap: isMobile ? 6 : 12, height: 64, padding: isMobile ? "0 10px" : "0 18px 0 20px", flex: "none",
+      display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center",
+      gap: isMobile ? 6 : 12, height: 68, padding: isMobile ? "0 10px" : "0 18px 0 20px", flex: "none",
     }}>
-      {/* Left: hamburger (mobile) + breadcrumb + temporary indicator */}
-      <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}>
+      {/* Left: hamburger (mobile) + temporary indicator */}
+      <div style={{ justifySelf: "start", minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}>
         {isMobile && (
           <IconButton icon={<I name="menu" />} label="Open menu" onClick={onOpenMobileNav} style={{ flex: "none" }} />
         )}
-        <Breadcrumb nodes={nodes} onNavigate={onNavigate} onRename={onRename} maxVisible={isMobile ? 2 : 4} />
         {isTemporary && (
           <span style={{
             display: "inline-flex", alignItems: "center", gap: 5,
             height: 22, padding: "0 10px", flex: "none",
             background: "oklch(95% 0.04 70)",
-            border: "1px solid oklch(82% 0.07 70)",
+            border: "1px solid transparent",
             borderRadius: "var(--radius-pill)",
             fontFamily: "var(--font-sans)", fontSize: "var(--fs-micro)", fontWeight: 700,
             color: "oklch(50% 0.14 70)", whiteSpace: "nowrap",
@@ -45,32 +45,38 @@ export function TopBar({
         )}
       </div>
 
-      {/* Right: action buttons */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, flex: "none" }}>
+      {/* Center: Back + branch nav + Merge — reads as one group, truly centered
+          regardless of what's in the side columns (grid, not flex, guarantees this). */}
+      <div style={{ justifySelf: "center", display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+        <BranchNav nodes={nodes} branches={branches} rootChatId={rootChatId} inBranch={inBranch} onNavigate={onNavigate} onRename={onRename} isMobile={isMobile} />
         {inBranch && (isMobile ? (
           <Tooltip content="Merge to parent" side="bottom">
-            <IconButton icon={<I name="git-merge" />} label="Merge to parent" variant="soft" onClick={onMerge} />
+            <IconButton icon={<I name="git-merge" />} label="Merge to parent" variant="soft" onClick={onMerge} style={{ position: "relative", zIndex: "calc(var(--z-overlay) + 10)" }} />
           </Tooltip>
         ) : (
-          <button
+          <motion.button
             type="button" onClick={onMerge} style={mergeBtn}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-hover)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "var(--surface-2)"; }}
+            whileHover={{ opacity: 0.8 }}
+            whileTap={{ scale: 0.97 }}
           >
             <I name="git-merge" size={15} /> Merge to parent
-          </button>
+          </motion.button>
         ))}
+      </div>
 
+      {/* Right: action buttons */}
+      <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 6 }}>
         <Tooltip content={theme === "dark" ? "Light mode" : "Dark mode"} side="bottom">
           <IconButton icon={<I name={theme === "dark" ? "sun" : "moon"} />} label="Toggle theme" onClick={onToggleTheme} />
         </Tooltip>
 
         {/* Temporary chat toggle */}
         <Tooltip content={tempActive ? "Exit temporary chat" : "Start temporary chat"} side="bottom">
-          <button
+          <motion.button
             type="button" onClick={onStartTemporary}
             onMouseEnter={() => setTempHover(true)}
             onMouseLeave={() => setTempHover(false)}
+            whileTap={{ scale: 0.94 }}
             style={{
               display: "inline-flex", alignItems: "center", justifyContent: "center",
               width: 36, height: 36, flex: "none", border: "none",
@@ -84,7 +90,7 @@ export function TopBar({
             }}
           >
             <I name="clock" size={18} />
-          </button>
+          </motion.button>
         </Tooltip>
       </div>
     </div>
@@ -201,9 +207,11 @@ export function SharePopover({ nodes, inBranch, onClose, onToast }) {
 }
 
 const mergeBtn = {
-  display: "inline-flex", alignItems: "center", gap: 7, height: 36, padding: "0 14px",
-  background: "var(--surface-2)", border: "1px solid var(--border-subtle)",
+  position: "relative", zIndex: "calc(var(--z-overlay) + 10)",
+  display: "inline-flex", alignItems: "center", gap: 7, height: NAV_PILL_HEIGHT, padding: "0 18px",
+  background: "var(--surface-2)",
+  border: "1px solid transparent",
   borderRadius: "var(--radius-pill)", color: "var(--text-brand)",
   fontFamily: "var(--font-sans)", fontSize: "var(--fs-body-sm)", fontWeight: 600,
-  cursor: "pointer", transition: "background var(--motion-fast)",
+  cursor: "pointer",
 };

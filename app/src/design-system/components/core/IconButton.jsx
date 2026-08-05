@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "framer-motion";
 
 /**
  * Square/round icon-only button. For toolbars, rails, message actions.
@@ -21,18 +22,20 @@ export function IconButton({
 
   const variants = {
     ghost: { background: active ? "var(--surface-active)" : "transparent", color: "var(--text-secondary)", border: "1px solid transparent" },
-    soft: { background: active ? "var(--surface-selected)" : "var(--surface-2)", color: active ? "var(--text-brand)" : "var(--text-secondary)", border: "1px solid var(--border-subtle)" },
+    soft: { background: active ? "var(--surface-selected)" : "var(--surface-2)", color: active ? "var(--text-brand)" : "var(--text-secondary)", border: "1px solid transparent" },
     solid: { background: "var(--brand-primary)", color: "var(--brand-on-primary)", border: "1px solid transparent", boxShadow: "var(--shadow-glow-soft)" },
   };
   const v = variants[variant] || variants.ghost;
 
   return (
-    <button
+    <motion.button
       type="button"
       aria-label={label}
       title={label}
       disabled={disabled}
       onClick={onClick}
+      whileHover={disabled ? undefined : { opacity: 0.85 }}
+      whileTap={disabled ? undefined : { scale: 0.94 }}
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -43,7 +46,7 @@ export function IconButton({
         borderRadius: shape === "circle" ? "var(--radius-full)" : "var(--radius-sm)",
         cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? "var(--opacity-disabled)" : 1,
-        transition: "var(--transition-base)",
+        transition: "background var(--motion-fast) var(--ease-standard)",
         ...v,
         ...style,
       }}
@@ -52,6 +55,6 @@ export function IconButton({
       {...rest}
     >
       {icon}
-    </button>
+    </motion.button>
   );
 }

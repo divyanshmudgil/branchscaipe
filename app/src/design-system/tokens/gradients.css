@@ -33,7 +33,10 @@
 
   /* --- Text-reveal protection (fade messages under sticky header) --- */
   --gradient-fade-top:
-    linear-gradient(180deg, var(--bg) 12%, rgba(255,255,255,0) 100%); /* @kind color */
+    linear-gradient(180deg, var(--surface-1) 12%, rgba(255,255,255,0) 100%); /* @kind color */
+  /* --- Same idea, upside down: fade messages into the composer --- */
+  --gradient-fade-bottom:
+    linear-gradient(0deg, var(--surface-1) 12%, rgba(255,255,255,0) 100%); /* @kind color */
 }
 
 .dark,
@@ -59,7 +62,9 @@
     linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 40%); /* @kind color */
 
   --gradient-fade-top:
-    linear-gradient(180deg, var(--bg) 12%, rgba(13,13,20,0) 100%); /* @kind color */
+    linear-gradient(180deg, var(--surface-1) 12%, rgba(13,13,20,0) 100%); /* @kind color */
+  --gradient-fade-bottom:
+    linear-gradient(0deg, var(--surface-1) 12%, rgba(13,13,20,0) 100%); /* @kind color */
 }
 
 /* ---- Ambient drift animation for aurora backdrops ----------------------

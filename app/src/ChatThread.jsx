@@ -1,6 +1,7 @@
 // ChatThread — renders a branch's transcript: origin banner, quoted-selection
 // context (for selection-branches), messages, merge dividers, status.
 import React from "react";
+import { motion } from "framer-motion";
 import { UserMessage, AIStatusIndicator } from "./design-system/components/ai/index.js";
 import { Response, MergeDivider, BranchOriginBanner } from "./Response.jsx";
 import { Icon as I } from "./Icon.jsx";
@@ -30,20 +31,30 @@ export function ChatThread({ branch, status, inBranch, onAction, onContextMenu, 
         )}
 
         {branch.messages.map((m) => {
+          // initial/animate on a motion element only plays once, on that
+          // component instance's first mount — since messages are keyed by
+          // id and only ever appended (never reordered), this naturally
+          // animates just the newly-arrived message, not the whole history
+          // re-playing on every render or branch switch.
+          const entrance = { initial: { opacity: 0, y: 6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] } };
           if (m.role === "merge") {
-            return <MergeDivider key={m.id} source={m.source} ts={m.ts} scope={m.scope} onJump={() => onJumpSource && onJumpSource(m.sourceId)} />;
+            return (
+              <motion.div key={m.id} {...entrance}>
+                <MergeDivider source={m.source} ts={m.ts} scope={m.scope} onJump={() => onJumpSource && onJumpSource(m.sourceId)} />
+              </motion.div>
+            );
           }
           if (m.role === "user") {
             return (
-              <div key={m.id} ref={(n) => registerMsgRef(m.id, n)} className={highlightId === m.id ? "bsc-flash" : ""}>
+              <motion.div key={m.id} ref={(n) => registerMsgRef(m.id, n)} className={highlightId === m.id ? "bsc-flash" : ""} {...entrance}>
                 <UserMessage>{m.text}</UserMessage>
-              </div>
+              </motion.div>
             );
           }
           return (
-            <div key={m.id} ref={(n) => registerMsgRef(m.id, n)} className={highlightId === m.id ? "bsc-flash" : ""} style={m.fromMerge ? { borderLeft: "2px solid var(--border-brand)", paddingLeft: 16, marginLeft: -2 } : null}>
+            <motion.div key={m.id} ref={(n) => registerMsgRef(m.id, n)} className={highlightId === m.id ? "bsc-flash" : ""} style={m.fromMerge ? { borderLeft: "2px solid var(--border-brand)", paddingLeft: 16, marginLeft: -2 } : null} {...entrance}>
               <Response msg={m} inBranch={inBranch} onAction={onAction} onContextMenu={onContextMenu} onSelectText={onSelectText} registerRef={() => {}} isTouch={isTouch} />
-            </div>
+            </motion.div>
           );
         })}
 

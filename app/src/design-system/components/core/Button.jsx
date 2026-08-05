@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "framer-motion";
 
 /**
  * Branchscaipe primary button. Soft, rounded, calm.
@@ -40,7 +41,7 @@ export function Button({
     secondary: {
       background: "var(--surface-2)",
       color: "var(--text-primary)",
-      border: "1px solid var(--border-default)",
+      border: "1px solid transparent",
       boxShadow: "none",
     },
     ghost: {
@@ -59,12 +60,14 @@ export function Button({
   const v = variants[variant] || variants.primary;
 
   return (
-    <button
+    <motion.button
       type={type}
       disabled={disabled}
       onClick={onClick}
       className="bsc-btn"
       data-variant={variant}
+      whileHover={disabled ? undefined : { opacity: 0.88 }}
+      whileTap={disabled ? undefined : { scale: 0.97 }}
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -80,19 +83,15 @@ export function Button({
         borderRadius: s.radius,
         cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? "var(--opacity-disabled)" : 1,
-        transition: "var(--transition-base)",
         whiteSpace: "nowrap",
         ...v,
         ...style,
       }}
-      onMouseDown={(e) => { if (!disabled) e.currentTarget.style.transform = "scale(0.98)"; }}
-      onMouseUp={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
       {...rest}
     >
       {iconLeft && <span style={{ display: "inline-flex", flex: "none" }}>{iconLeft}</span>}
       {children}
       {iconRight && <span style={{ display: "inline-flex", flex: "none" }}>{iconRight}</span>}
-    </button>
+    </motion.button>
   );
 }

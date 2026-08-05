@@ -3,6 +3,7 @@
 // icon centering improved for collapsed state.
 import React from "react";
 import ReactDOM from "react-dom";
+import { motion } from "framer-motion";
 import { Avatar } from "./design-system/components/core/index.js";
 import { Icon as I } from "./Icon.jsx";
 
@@ -14,14 +15,14 @@ function ChatListItem({ chat, active, expanded, onClick, onContextMenu }) {
     ? "var(--surface-selected)"
     : hover ? "var(--surface-hover)" : "transparent";
   return (
-    <div
+    <motion.div
       onClick={onClick} title={chat.name}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       onContextMenu={(e) => { e.preventDefault(); onContextMenu && onContextMenu(chat, e); }}
+      whileTap={{ scale: 0.98 }}
       style={{
         display: "flex", alignItems: "center", gap: 9, width: "100%", height: 36,
         padding: "0 8px", background: bg,
-        border: active ? "1px solid var(--border-brand)" : "1px solid transparent",
         borderRadius: "var(--radius-md)", cursor: "pointer", textAlign: "left", flex: "none",
         transition: "background var(--motion-fast) var(--ease-standard)",
       }}
@@ -51,7 +52,7 @@ function ChatListItem({ chat, active, expanded, onClick, onContextMenu }) {
           <I name="more-horizontal" size={14} />
         </button>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -114,10 +115,10 @@ function ProfileMenu({ theme, anchorRect, onClose, onThemeToggle, onShortcuts, o
       width: menuW, padding: 6,
       background: "var(--surface-glass-heavy)",
       WebkitBackdropFilter: "var(--glass-blur)", backdropFilter: "var(--glass-blur)",
-      border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-md)",
+      border: "1px solid transparent", borderRadius: "var(--radius-md)",
       boxShadow: "var(--shadow-lg)", animation: "bscPop var(--motion-fast) var(--ease-out)",
     }}>
-      <div style={{ padding: "8px 12px 10px", borderBottom: "1px solid var(--border-subtle)", marginBottom: 6 }}>
+      <div style={{ padding: "8px 12px 12px", marginBottom: 4 }}>
         <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--fs-body-sm)", fontWeight: 700, color: "var(--text-primary)" }}>{displayName}</div>
         <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--fs-micro)", color: "var(--text-muted)" }}>{displaySub}</div>
       </div>
@@ -142,9 +143,10 @@ function SidebarItem({ icon, label, onClick, active, badge, accent, expanded }) 
   const bg = active ? "var(--surface-selected)" : hover ? "var(--surface-hover)" : "transparent";
   const col = active ? "var(--text-brand)" : "var(--text-secondary)";
   return (
-    <button
+    <motion.button
       type="button" onClick={onClick} title={expanded ? undefined : label}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      whileTap={{ scale: 0.97 }}
       style={{
         display: "flex", alignItems: "center",
         gap: expanded ? 10 : 0,
@@ -186,7 +188,7 @@ function SidebarItem({ icon, label, onClick, active, badge, accent, expanded }) 
         width: 6, height: 6, borderRadius: "50%", background: "var(--brand-primary)",
         display: (badge != null && badge > 0 && !expanded) ? "block" : "none",
       }} />
-    </button>
+    </motion.button>
   );
 }
 
@@ -248,23 +250,20 @@ export function Sidebar({
   return (
     <>
       {isMobile && mobileOpen && <div className="bsc-scrim" onClick={onMobileClose} />}
-      {/* bsc-sidebar class provides animated gradient (see app.css) */}
-      <div
+      {/* bsc-sidebar class provides the glass background (see app.css) */}
+      <motion.div
         className="bsc-sidebar"
+        initial={false}
+        animate={isMobile ? { x: mobileOpen ? 0 : "-100%" } : { width: W }}
+        transition={{ type: "spring", stiffness: 320, damping: 34 }}
         style={{
-          width: W, flex: "none", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 2,
+          flex: "none", display: "flex", flexDirection: "column", alignItems: "stretch", gap: 2,
           padding: "12px 8px",
           WebkitBackdropFilter: "var(--glass-blur)", backdropFilter: "var(--glass-blur)",
-          borderRight: "1px solid var(--border-subtle)",
           overflow: "hidden",
           ...(isMobile
-            ? {
-                position: "fixed", top: 0, left: 0, height: "100%", zIndex: "var(--z-modal)",
-                boxShadow: "var(--shadow-xl)",
-                transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
-                transition: "transform var(--motion-medium) var(--ease-out)",
-              }
-            : { zIndex: "var(--z-rail)", transition: "width var(--motion-medium) var(--ease-out)" }),
+            ? { width: W, position: "fixed", top: 0, left: 0, height: "100%", zIndex: "var(--z-modal)", boxShadow: "var(--shadow-xl)" }
+            : { zIndex: "var(--z-rail)" }),
         }}
       >
       {/* Brand + toggle */}
@@ -297,15 +296,15 @@ export function Sidebar({
       {it({ icon: "square-pen", label: "New chat", onClick: handleNewChat, accent: true })}
       {it({ icon: "search",     label: "Search",   onClick: handleSearch })}
 
-      <div style={{ height: 1, background: "var(--border-subtle)", margin: "4px 2px" }} />
-
       {/* ── Chat list: ONLY rendered when expanded (desktop) or always (mobile drawer) ──
           Container keeps flex:1 so layout below stays anchored to the bottom.
-          When collapsed the space is empty — no chat icons visible.          */}
+          When collapsed the space is empty — no chat icons visible. Groups are
+          separated by whitespace only, not divider lines — spacing already
+          communicates the hierarchy.                                         */}
       <div
         className="bsc-scroll"
         style={{
-          flex: 1, minHeight: 0,
+          flex: 1, minHeight: 0, marginTop: 10,
           overflowY: showExpanded ? "auto" : "hidden",
           display: "flex", flexDirection: "column", gap: 1, paddingBottom: 4,
         }}
@@ -332,27 +331,27 @@ export function Sidebar({
         ))}
       </div>
 
-      <div style={{ height: 1, background: "var(--border-subtle)", margin: "4px 2px" }} />
+      <div style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 10 }}>
+        {it({
+          icon: "git-branch", label: "Branches",
+          onClick: () => handleOpenPanel("branches"),
+          active: activePanel === "branches", badge: branchCount,
+        })}
+        {it({
+          icon: "star", label: "Starred",
+          onClick: () => handleOpenPanel("starred"),
+          active: activePanel === "starred", badge: starCount,
+        })}
+        {it({
+          icon: "history", label: "History",
+          onClick: () => handleOpenPanel("history"),
+          active: activePanel === "history",
+        })}
+      </div>
 
-      {it({
-        icon: "git-branch", label: "Branches",
-        onClick: () => handleOpenPanel("branches"),
-        active: activePanel === "branches", badge: branchCount,
-      })}
-      {it({
-        icon: "star", label: "Starred",
-        onClick: () => handleOpenPanel("starred"),
-        active: activePanel === "starred", badge: starCount,
-      })}
-      {it({
-        icon: "history", label: "History",
-        onClick: () => handleOpenPanel("history"),
-        active: activePanel === "history",
-      })}
-
-      <div style={{ height: 1, background: "var(--border-subtle)", margin: "4px 2px" }} />
-
-      {it({ icon: "settings", label: "Settings", onClick: handleSettings })}
+      <div style={{ marginTop: 10 }}>
+        {it({ icon: "settings", label: "Settings", onClick: handleSettings })}
+      </div>
 
       {/* Profile with dropdown — menu uses position:fixed to escape overflow:hidden */}
       <div style={{ position: "relative", flex: "none" }}>
@@ -376,7 +375,7 @@ export function Sidebar({
           style={{
             display: "flex", alignItems: "center", gap: showExpanded ? 10 : 0,
             width: "100%", height: 44,
-            padding: showExpanded ? "0 6px" : "0",
+            padding: showExpanded ? "0 8px" : "0",
             justifyContent: showExpanded ? "flex-start" : "center",
             border: "none", borderRadius: "var(--radius-md)",
             background: profileOpen ? "var(--surface-hover)" : "transparent",
@@ -398,7 +397,7 @@ export function Sidebar({
             <Avatar src={authProfile?.avatarUrl} name={authProfile?.fullName || authProfile?.email || "User"} kind="user" size={30} style={{ background: "var(--c-aurora-mint)", flex: "none" }} />
           )}
           <div style={{
-            minWidth: 0, overflow: "hidden",
+            minWidth: 0, overflow: "hidden", textAlign: "left",
             width: showExpanded ? "auto" : 0,
             opacity: showExpanded ? 1 : 0,
             transition: "opacity var(--motion-fast) var(--ease-standard)",
@@ -412,7 +411,7 @@ export function Sidebar({
           </div>
         </button>
       </div>
-      </div>
+      </motion.div>
     </>
   );
 }

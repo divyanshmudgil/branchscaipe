@@ -2,6 +2,7 @@
 // Key changes: empty initial state, null-safe activeId, temporary chat,
 // auto-create chat on first send, AppComposer, profile actions, visual cleanup.
 import React from "react";
+import { motion } from "framer-motion";
 import { Button, IconButton } from "./design-system/components/core/index.js";
 import { Dialog, Toast, Tooltip } from "./design-system/components/feedback/index.js";
 import { Icon as I } from "./Icon.jsx";
@@ -22,6 +23,7 @@ import { useHydrateFromSupabase } from "./sync/useHydrateFromSupabase.ts";
 import { useDirtyBranchSync } from "./sync/useDirtyBranchSync.ts";
 import * as guestImportService from "./sync/guestImportService.ts";
 import { deleteConversationCascade, deleteBranchCascade } from "./sync/supabaseSyncService.ts";
+import { withViewTransition } from "./viewTransition.js";
 
 const LS_KEY = "bsc.app.v4"; // bumped to clear stale hardcoded data
 
@@ -107,6 +109,14 @@ function AppShell({
     return null;
   });
   const [theme, setTheme] = React.useState(() => (saved && saved.theme) || "light");
+  // Every theme change goes through here so the radial reveal (app.css)
+  // applies no matter which trigger fired it (TopBar, sidebar menu, Settings).
+  const setThemeAnimated = React.useCallback((next) => {
+    withViewTransition(() => setTheme(next));
+  }, []);
+  const toggleTheme = React.useCallback(() => {
+    setThemeAnimated((t) => (t === "dark" ? "light" : "dark"));
+  }, [setThemeAnimated]);
   const [density, setDensity] = React.useState(() => (saved && saved.density) || "comfortable");
   const [confirmMergePref, setConfirmMergePref] = React.useState(() => (saved ? saved.confirmMergePref !== false : true));
   const [sidebarExpanded, setSidebarExpanded] = React.useState(() => (saved ? !!saved.sidebarExpanded : false));
@@ -597,7 +607,7 @@ function AppShell({
 
   // ── profile actions ──
   const handleProfileAction = (action) => {
-    if (action === "theme") setTheme(t => t === "dark" ? "light" : "dark");
+    if (action === "theme") toggleTheme();
     else if (action === "shortcuts") setShortcutsOpen(true);
     else if (action === "settings") setSettingsOpen(true);
   };
@@ -613,7 +623,7 @@ function AppShell({
         branchCount={convBranchCount} starCount={starred.length} theme={theme}
         rootChats={rootChats} activeChatId={rootChatId}
         onSelectChat={navigate}
-        onThemeToggle={() => setTheme(t => t === "dark" ? "light" : "dark")}
+        onThemeToggle={toggleTheme}
         onProfileAction={handleProfileAction}
         isMobile={isMobile} mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)}
         authIsGuest={isGuest} authProfile={authProfile} onSignOut={onSignOut}
@@ -632,7 +642,7 @@ function AppShell({
         />
       )}
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, position: "relative", background: "var(--bg)" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, position: "relative", background: "var(--surface-1)" }}>
         <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
           {/* Landing header — hamburger (mobile) + theme toggle + temp chat, shown only when no branch is active */}
           {!branch && (
@@ -648,7 +658,7 @@ function AppShell({
                   <IconButton
                     icon={<I name={theme === "dark" ? "sun" : "moon"} />}
                     label="Toggle theme"
-                    onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}
+                    onClick={toggleTheme}
                   />
                 </Tooltip>
                 <Tooltip content={isTemporary ? "Exit temporary chat" : "Start temporary chat"} side="bottom">
@@ -665,9 +675,10 @@ function AppShell({
           {/* TopBar — shown when any branch is active */}
           {branch && (
             <TopBar
-              nodes={nodes} inBranch={inBranch} onNavigate={navigate} onRename={renameBranch}
+              nodes={nodes} branches={branches} rootChatId={rootChatId}
+              inBranch={inBranch} onNavigate={navigate} onRename={renameBranch}
               onMerge={openMergeConversation} theme={theme}
-              onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+              onToggleTheme={toggleTheme}
               isTemporary={isTemporary} onStartTemporary={startTemporaryChat}
               onToast={setToast}
               isMobile={isMobile} onOpenMobileNav={() => setMobileNavOpen(true)}
@@ -678,7 +689,12 @@ function AppShell({
             <EmptyState onSend={send} input={input} setInput={setInput} onToast={setToast} isMobile={isMobile} />
           ) : (
             <>
-              <div onScrollCapture={closeTransients} style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+              <motion.div
+                key={activeId}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+                onScrollCapture={closeTransients} style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}
+              >
                 <ChatThread
                   branch={threadBranch} status={status} inBranch={inBranch}
                   onAction={(a, msg) => {
@@ -694,20 +710,22 @@ function AppShell({
                   scrollRef={scrollRef} registerMsgRef={registerMsgRef} highlightId={highlightId}
                   isTouch={isTouch} isMobile={isMobile}
                 />
-              </div>
-              <div style={{
-                padding: isMobile ? "0 12px calc(14px + env(safe-area-inset-bottom))" : "0 24px 22px",
-                flex: "none",
-              }}>
-                <AppComposer
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onSend={send}
-                  branchingFrom={inBranch ? (branch.branchSeed || (branches[branch.parentId] || {}).name) : null}
-                  onToast={setToast}
-                  isGenerating={status !== "idle"}
-                  onStop={stopGenerating}
-                />
+              </motion.div>
+              <div style={{ position: "relative", flex: "none" }}>
+                <div style={{ position: "absolute", bottom: "100%", left: 0, right: 0, height: 24, background: "var(--gradient-fade-bottom)", pointerEvents: "none" }} />
+                <div style={{
+                  padding: isMobile ? "0 12px calc(14px + env(safe-area-inset-bottom))" : "0 24px 22px",
+                }}>
+                  <AppComposer
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onSend={send}
+                    branchingFrom={inBranch ? (branch.branchSeed || (branches[branch.parentId] || {}).name) : null}
+                    onToast={setToast}
+                    isGenerating={status !== "idle"}
+                    onStop={stopGenerating}
+                  />
+                </div>
               </div>
             </>
           )}
@@ -760,7 +778,7 @@ function AppShell({
       {/* Settings */}
       <Dialog open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Settings" width={460}
         footer={<Button variant="secondary" onClick={() => setSettingsOpen(false)}>Done</Button>}>
-        <SettingsBody theme={theme} setTheme={setTheme} density={density} setDensity={setDensity} autoMerge={confirmMergePref} setAutoMerge={setConfirmMergePref} />
+        <SettingsBody theme={theme} setTheme={setThemeAnimated} density={density} setDensity={setDensity} autoMerge={confirmMergePref} setAutoMerge={setConfirmMergePref} />
       </Dialog>
 
       {/* Keyboard shortcuts */}
